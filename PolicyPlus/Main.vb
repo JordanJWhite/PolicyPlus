@@ -815,9 +815,13 @@ Public Class Main
         Try
             Dim proc = Process.Start("gpupdate", "/force")
             proc.WaitForExit()
-            MsgBox($"gpupdate exited with code {proc.ExitCode}.", MsgBoxStyle.Information)
+            If proc.ExitCode = 0 Then
+                MsgBox("Group Policy update completed successfully.", MsgBoxStyle.Information)
+            Else
+                MsgBox($"Group Policy update finished with exit code {proc.ExitCode}.", MsgBoxStyle.Exclamation)
+            End If
         Catch ex As Exception
-            MsgBox("Failed to run gpupdate: " & ex.Message, MsgBoxStyle.Exclamation)
+            MsgBox("Could not run Group Policy update: " & ex.Message, MsgBoxStyle.Critical)
         End Try
     End Sub
     Private Sub PolicyObjectContext_Opening(sender As Object, e As CancelEventArgs) Handles PolicyObjectContext.Opening
