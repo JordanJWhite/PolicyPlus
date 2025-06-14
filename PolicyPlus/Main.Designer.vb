@@ -43,6 +43,7 @@ Partial Class Main
         Me.OpenPolicyResourcesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.SavePoliciesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.EditRawPOLToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.RunGpupdateToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ExitToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ViewToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.EmptyCategoriesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -178,7 +179,7 @@ Partial Class Main
         '
         'FileToolStripMenuItem
         '
-        Me.FileToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.OpenADMXFolderToolStripMenuItem, Me.OpenADMXFileToolStripMenuItem, Me.SetADMLLanguageToolStripMenuItem, Me.CloseADMXWorkspaceToolStripMenuItem, ToolStripSeparator2, Me.OpenPolicyResourcesToolStripMenuItem, Me.SavePoliciesToolStripMenuItem, Me.EditRawPOLToolStripMenuItem, ToolStripSeparator3, Me.ExitToolStripMenuItem})
+        Me.FileToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.OpenADMXFolderToolStripMenuItem, Me.OpenADMXFileToolStripMenuItem, Me.SetADMLLanguageToolStripMenuItem, Me.CloseADMXWorkspaceToolStripMenuItem, ToolStripSeparator2, Me.OpenPolicyResourcesToolStripMenuItem, Me.SavePoliciesToolStripMenuItem, Me.EditRawPOLToolStripMenuItem, ToolStripSeparator3, Me.RunGpupdateToolStripMenuItem, Me.ExitToolStripMenuItem})
         Me.FileToolStripMenuItem.Name = "FileToolStripMenuItem"
         Me.FileToolStripMenuItem.Size = New System.Drawing.Size(37, 20)
         Me.FileToolStripMenuItem.Text = "File"
@@ -226,6 +227,12 @@ Partial Class Main
         Me.EditRawPOLToolStripMenuItem.Name = "EditRawPOLToolStripMenuItem"
         Me.EditRawPOLToolStripMenuItem.Size = New System.Drawing.Size(237, 22)
         Me.EditRawPOLToolStripMenuItem.Text = "Edit Raw POL"
+        '
+        'RunGpupdateToolStripMenuItem
+        '
+        Me.RunGpupdateToolStripMenuItem.Name = "RunGpupdateToolStripMenuItem"
+        Me.RunGpupdateToolStripMenuItem.Size = New System.Drawing.Size(237, 22)
+        Me.RunGpupdateToolStripMenuItem.Text = "Run gpupdate /force"
         '
         'ExitToolStripMenuItem
         '
@@ -753,6 +760,7 @@ Partial Class Main
     Friend WithEvents AllSupportDefinitionsToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents AllProductsToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents EditRawPOLToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents RunGpupdateToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ExportREGToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ImportREGToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents SetADMLLanguageToolStripMenuItem As ToolStripMenuItem

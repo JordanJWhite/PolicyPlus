@@ -811,6 +811,19 @@ Public Class Main
             End If
         End If
     End Sub
+    Private Sub RunGpupdateToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles RunGpupdateToolStripMenuItem.Click
+        Try
+            Dim proc = Process.Start("gpupdate", "/force")
+            proc.WaitForExit()
+            If proc.ExitCode = 0 Then
+                MsgBox("Group Policy update completed successfully.", MsgBoxStyle.Information)
+            Else
+                MsgBox($"Group Policy update finished with exit code {proc.ExitCode}.", MsgBoxStyle.Exclamation)
+            End If
+        Catch ex As Exception
+            MsgBox("Could not run Group Policy update: " & ex.Message, MsgBoxStyle.Critical)
+        End Try
+    End Sub
     Private Sub PolicyObjectContext_Opening(sender As Object, e As CancelEventArgs) Handles PolicyObjectContext.Opening
         ' When the right-click menu is opened
         Dim showingForCategory As Boolean
