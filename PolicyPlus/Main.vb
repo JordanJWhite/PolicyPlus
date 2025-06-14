@@ -15,6 +15,7 @@ Public Class Main
     Dim ViewEmptyCategories As Boolean = False
     Dim ViewPolicyTypes As AdmxPolicySection = AdmxPolicySection.Both
     Dim ViewFilteredOnly As Boolean = False
+    Dim PoliciesChanged As Boolean = False
     Private Sub Main_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' Create the configuration manager (for the Registry)
         Configuration = New ConfigurationStorage(RegistryHive.CurrentUser, "Software\Policy Plus")
@@ -295,6 +296,7 @@ Public Class Main
     Sub ShowSettingEditor(Policy As PolicyPlusPolicy, Section As AdmxPolicySection)
         ' Show the Edit Policy Setting dialog for a policy and reload if changes were made
         If EditSetting.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments) = DialogResult.OK Then
+            PoliciesChanged = True
             ' Keep the selection where it is if possible
             If CurrentCategory Is Nothing OrElse ShouldShowCategory(CurrentCategory) Then UpdateCategoryListing() Else MoveToVisibleCategoryAndReload()
         End If
@@ -369,6 +371,17 @@ Public Class Main
             MsgBox("Cleanup did not complete fully because the loaded resources are open in other programs.", MsgBoxStyle.Exclamation)
         End If
     End Sub
+
+    Private Function ConfirmSaveChanges() As Boolean
+        If Not PoliciesChanged Then Return True
+        Dim result = MessageBox.Show("Do you want to save changes to your policies?", "Policy Plus", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question)
+        If result = DialogResult.Cancel Then Return False
+        If result = DialogResult.Yes Then
+            SavePoliciesToolStripMenuItem_Click(Nothing, Nothing)
+        End If
+        PoliciesChanged = False
+        Return True
+    End Function
     Sub ShowSearchDialog(Searcher As Func(Of PolicyPlusPolicy, Boolean))
         ' Show the search dialog and make it start a search if appropriate
         Dim result As DialogResult
@@ -603,6 +616,7 @@ Public Class Main
     End Sub
     Private Sub OpenPolicyResourcesToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles OpenPolicyResourcesToolStripMenuItem.Click
         ' Show the Open Policy Resources dialog and open its loaders
+        If Not ConfirmSaveChanges() Then Exit Sub
         If OpenPol.ShowDialog = DialogResult.OK Then
             OpenPolicyLoaders(OpenPol.SelectedUser, OpenPol.SelectedComputer, False)
             MoveToVisibleCategoryAndReload()
@@ -629,6 +643,7 @@ Public Class Main
             Configuration.SetValue("CompSourceData", If(CompPolicyLoader.LoaderData, ""))
             Configuration.SetValue("UserSourceData", If(UserPolicyLoader.LoaderData, ""))
             MsgBox("Success." & vbCrLf & vbCrLf & "User policies: " & userStatus & "." & vbCrLf & vbCrLf & "Computer policies: " & compStatus & ".", MsgBoxStyle.Information)
+            PoliciesChanged = False
         Catch ex As Exception
             MsgBox("Saving failed!" & vbCrLf & vbCrLf & ex.Message, MsgBoxStyle.Exclamation)
         End Try
@@ -679,6 +694,9 @@ Public Class Main
         PolicyInfoTable.PerformLayout() ' Force the table to take up its full desired size
         PInvoke.ShowScrollBar(SettingInfoPanel.Handle, 0, False) ' 0 means horizontal
     End Sub
+    Private Sub Main_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+        If Not ConfirmSaveChanges() Then e.Cancel = True
+    End Sub
     Private Sub Main_Closed(sender As Object, e As EventArgs) Handles Me.Closed
         ClosePolicySources() ' Make sure everything is cleaned up before quitting
     End Sub
@@ -706,6 +724,7 @@ Public Class Main
         If ImportSpol.ShowDialog() = DialogResult.OK Then
             Dim spol = ImportSpol.Spol
             Dim fails = spol.ApplyAll(AdmxWorkspace, UserPolicySource, CompPolicySource, UserComments, CompComments)
+            PoliciesChanged = True
             MoveToVisibleCategoryAndReload()
             If fails = 0 Then
                 MsgBox("Semantic Policy successfully applied.", MsgBoxStyle.Information)
@@ -729,6 +748,7 @@ Public Class Main
                 If OpenSection.PresentDialog(True, True) = DialogResult.OK Then
                     Dim section = If(OpenSection.SelectedSection = AdmxPolicySection.User, UserPolicySource, CompPolicySource)
                     pol.Apply(section)
+                    PoliciesChanged = True
                     MoveToVisibleCategoryAndReload()
                     MsgBox("POL import successful.", MsgBoxStyle.Information)
                 End If
@@ -786,6 +806,7 @@ Public Class Main
         If OpenSection.PresentDialog(userIsPol, compIsPol) = DialogResult.OK Then
             EditPol.PresentDialog(PolicyIcons, If(OpenSection.SelectedSection = AdmxPolicySection.Machine, CompPolicySource, UserPolicySource),
                                   OpenSection.SelectedSection = AdmxPolicySection.User)
+            PoliciesChanged = True
         End If
         MoveToVisibleCategoryAndReload()
     End Sub
@@ -798,7 +819,10 @@ Public Class Main
     Private Sub ImportREGToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ImportREGToolStripMenuItem.Click
         If OpenSection.PresentDialog(True, True) = DialogResult.OK Then
             Dim source = If(OpenSection.SelectedSection = AdmxPolicySection.Machine, CompPolicySource, UserPolicySource)
-            If ImportReg.PresentDialog(source) = DialogResult.OK Then MoveToVisibleCategoryAndReload()
+            If ImportReg.PresentDialog(source) = DialogResult.OK Then
+                PoliciesChanged = True
+                MoveToVisibleCategoryAndReload()
+            End If
         End If
     End Sub
     Private Sub SetADMLLanguageToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SetADMLLanguageToolStripMenuItem.Click
