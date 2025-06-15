@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="Policy Plus" Manufacturer="Jordan J. White" Version="1.0.0" Language="1033"
+	         UpgradeCode="f6a8f3dc-8a5b-479e-a812-12d3456789ab">
+		<Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of Policy Plus is already installed." />
+		<MediaTemplate EmbedCab="yes" CompressionLevel="high"/>
+
+		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+		<UIRef Id="WixUI_InstallDir" />
+		<UIRef Id="WixUI_ErrorProgressText" />
+
+		<PropertyRef Id="NETFRAMEWORK45" />
+		<Condition Message="Policy Plus requires .NET Framework 4.5 or newer. Please install it and run the installer again.">
+			NETFRAMEWORK45
+		</Condition>
+
+		<Directory Id="TARGETDIR" Name="SourceDir">
+
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="PolicyPlus">
+
+					<Component Id="MainExecutable" Guid="1D473B70-EC80-47E9-BC84-D3E0AAD54E29">
+						<File Id="PolicyPlusExe"
+						      Source="$(var.PolicyPlus.TargetPath)"
+						      KeyPath="yes">
+
+							<!-- Start-menu shortcut -->
+							<Shortcut Id="StartMenuShortcut"
+							          Advertise="yes"
+							          Directory="PolicyPlusProgramMenuDir"
+							          Name="Policy Plus"
+							          WorkingDirectory="INSTALLFOLDER"
+							          Icon="PolicyPlusIcon.ico" />
+						</File>
+
+						<File Id="PolicyPlusConfig"
+						      Source="$(var.PolicyPlus.TargetPath).config"/>
+
+						<!-- Clean up Start-menu folder on uninstall -->
+						<RemoveFolder Id="RemoveStartMenuDir"
+						              On="uninstall"
+						              Directory="PolicyPlusProgramMenuDir" />
+					</Component>
+
+
+				</Directory>
+			</Directory>
+
+			<Directory Id="ProgramMenuFolder">
+				<Directory Id="PolicyPlusProgramMenuDir" Name="Policy Plus" />
+			</Directory>
+		</Directory>
+
+
+		<Icon Id="PolicyPlusIcon.ico" SourceFile="..\PolicyPlus\PolicyPlusIcon.ico" />
+
+		<Property Id="ARPPRODUCTICON" Value="PolicyPlusIcon.ico"/>
+		<Property Id="ARPCONTACT" Value="Jordan J. White" />
+		<Property Id="ARPURLINFOABOUT" Value="https://github.com/JordanJWhite/PolicyPlus" />
+		<Property Id="ARPHELPLINK" Value="https://github.com/JordanJWhite/PolicyPlus/issues"/>
+		<Property Id="COMMENTS" Value="Local Group Policy editor for all Windows editions."/>
+		<WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+		<Feature Id="MainFeature" Title="Policy Plus" Level="1">
+			<ComponentRef Id="MainExecutable" />
+		</Feature>
+	</Product>
+</Wix>
