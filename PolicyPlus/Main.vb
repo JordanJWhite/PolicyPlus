@@ -650,8 +650,8 @@ Public Class Main
     End Sub
     Private Sub AboutToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AboutToolStripMenuItem.Click
         ' Show author and version information if it was compiled into the program
-        Dim about = $"Policy Plus by Ben Nordick.{vbCrLf}{vbCrLf}Available on GitHub: Fleex255/PolicyPlus."
-        If Version.Trim() <> "" Then about &= $" Version: {Version.Trim()}."
+        Dim about = $"Policy Plus by Jordan White.{vbCrLf}Originally created by Ben Nordick.{vbCrLf}{vbCrLf}Creative Commons Attribution 4.0 International License.{vbCrLf}{vbCrLf}Available on GitHub: https://github.com/JordanJWhite/PolicyPlus"
+        If Version.Trim() <> "" Then about &= $"{vbCrLf}{vbCrLf}Version: {Version.Trim()}."
         MsgBox(about, MsgBoxStyle.Information)
     End Sub
     Private Sub ByTextToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ByTextToolStripMenuItem.Click
