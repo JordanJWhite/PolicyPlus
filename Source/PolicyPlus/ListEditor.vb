@@ -8,12 +8,12 @@
         EntriesDatagrid.Rows.Clear()
         If Data IsNot Nothing Then
             If TwoColumn Then
-                Dim dict As Dictionary(Of String, String) = Data
+                Dim dict As Dictionary(Of String, String) = DirectCast(Data, Dictionary(Of String, String))
                 For Each kv In dict
                     EntriesDatagrid.Rows.Add(kv.Key, kv.Value)
                 Next
             Else
-                Dim list As List(Of String) = Data
+                Dim list As List(Of String) = DirectCast(Data, List(Of String))
                 For Each entry In list
                     EntriesDatagrid.Rows.Add("", entry)
                 Next

@@ -123,23 +123,23 @@
                 If elem.ElementType <> "list" Then elemNode.Nodes.Add("Registry value: " & elem.RegistryValue).ImageIndex = 13
                 Select Case elem.ElementType
                     Case "decimal"
-                        Dim decimalElem As DecimalPolicyElement = elem
+                        Dim decimalElem As DecimalPolicyElement = DirectCast(elem, DecimalPolicyElement)
                         elemNode.Nodes.Add("Minimum: " & decimalElem.Minimum).ImageIndex = 35 ' Down arrow
                         elemNode.Nodes.Add("Maximum: " & decimalElem.Maximum).ImageIndex = 6
                         If decimalElem.StoreAsText Then elemNode.Nodes.Add("Stored as text").ImageIndex = 33 ' Letters
                         elemNode.Nodes.Add("Required: " & If(decimalElem.Required, "yes", "no")).ImageIndex = 32 ' Exclamation
                         If decimalElem.NoOverwrite Then elemNode.Nodes.Add("Soft").ImageIndex = 34 ' Soft speaker
                     Case "boolean"
-                        Dim booleanElem As BooleanPolicyElement = elem
+                        Dim booleanElem As BooleanPolicyElement = DirectCast(elem, BooleanPolicyElement)
                         addList(booleanElem.AffectedRegistry, elemNode.Nodes, True)
                     Case "text"
-                        Dim textElem As TextPolicyElement = elem
+                        Dim textElem As TextPolicyElement = DirectCast(elem, TextPolicyElement)
                         elemNode.Nodes.Add("Maximum length: " & textElem.MaxLength).ImageIndex = 6
                         If textElem.RegExpandSz Then elemNode.Nodes.Add("Stored as expandable string").ImageIndex = 36 ' Letters with arrow
                         elemNode.Nodes.Add("Required: " & If(textElem.Required, "yes", "no")).ImageIndex = 32
                         If textElem.NoOverwrite Then elemNode.Nodes.Add("Soft").ImageIndex = 34
                     Case "list"
-                        Dim listElem As ListPolicyElement = elem
+                        Dim listElem As ListPolicyElement = DirectCast(elem, ListPolicyElement)
                         If listElem.UserProvidesNames Then
                             elemNode.Nodes.Add("User provides value names").ImageIndex = 13
                         ElseIf listElem.HasPrefix Then
@@ -150,7 +150,7 @@
                         If listElem.RegExpandSz Then elemNode.Nodes.Add("Stored as expandable strings").ImageIndex = 36
                         elemNode.Nodes.Add("Preserve existing values: " & If(listElem.NoPurgeOthers, "yes", "no")).ImageIndex = 34
                     Case "enum"
-                        Dim enumElem As EnumPolicyElement = elem
+                        Dim enumElem As EnumPolicyElement = DirectCast(elem, EnumPolicyElement)
                         elemNode.Nodes.Add("Required: " & If(enumElem.Required, "yes", "no")).ImageIndex = 32
                         Dim itemsNode = elemNode.Nodes.Add(enumElem.Items.Count & " choices")
                         itemsNode.ImageIndex = 26

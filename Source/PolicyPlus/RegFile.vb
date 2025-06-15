@@ -82,7 +82,7 @@ Public Class RegFile
                         Dim indexOfClosingParen = data.IndexOf(")"c)
                         Dim curHexLine As String
                         If indexOfClosingParen <> -1 Then
-                            value.Kind = Integer.Parse(data.Substring(4, indexOfClosingParen - 4), Globalization.NumberStyles.HexNumber)
+                            value.Kind = CType(Integer.Parse(data.Substring(4, indexOfClosingParen - 4), Globalization.NumberStyles.HexNumber), RegistryValueKind)
                             curHexLine = data.Substring(indexOfClosingParen + 2)
                         Else
                             value.Kind = RegistryValueKind.Binary

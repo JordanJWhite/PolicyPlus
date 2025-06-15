@@ -83,7 +83,7 @@
                         addControl(textPres.ID, label, "")
                     Case "decimalTextBox" ' Numeric spin box or a plain text box restricted to numbers
                         Dim decimalTextPres As NumericBoxPresentationElement = pres
-                        Dim numeric As DecimalPolicyElement = elemDict(pres.ID)
+                        Dim numeric As DecimalPolicyElement = DirectCast(elemDict(pres.ID), DecimalPolicyElement)
                         Dim newControl As Control
                         If decimalTextPres.HasSpinner Then
                             newControl = New NumericUpDown With {
@@ -109,7 +109,7 @@
                         addControl(pres.ID, newControl, decimalTextPres.Label)
                     Case "textBox" ' Simple text box
                         Dim textboxPres As TextBoxPresentationElement = pres
-                        Dim text As TextPolicyElement = elemDict(pres.ID)
+                        Dim text As TextPolicyElement = DirectCast(elemDict(pres.ID), TextPolicyElement)
                         Dim textbox As New TextBox With {
                             .Width = ExtraOptionsTable.Width * 0.75,
                             .Text = textboxPres.DefaultValue,
@@ -129,7 +129,7 @@
                         addControl(pres.ID, checkbox, "")
                     Case "comboBox" ' Text box with suggestions, not tested because it's not used in any default ADML
                         Dim comboPres As ComboBoxPresentationElement = pres
-                        Dim text As TextPolicyElement = elemDict(pres.ID)
+                        Dim text As TextPolicyElement = DirectCast(elemDict(pres.ID), TextPolicyElement)
                         Dim combobox As New ComboBox With {.DropDownStyle = ComboBoxStyle.DropDown}
                         combobox.MaxLength = text.MaxLength
                         combobox.Width = ExtraOptionsTable.Width * 0.75
@@ -143,7 +143,7 @@
                         Dim dropdownPres As DropDownPresentationElement = pres
                         Dim combobox As New ComboBox With {.DropDownStyle = ComboBoxStyle.DropDownList}
                         combobox.Sorted = Not dropdownPres.NoSort
-                        Dim enumElem As EnumPolicyElement = elemDict(pres.ID)
+                        Dim enumElem As EnumPolicyElement = DirectCast(elemDict(pres.ID), EnumPolicyElement)
                         Dim itemId As Integer = 0
                         Using g = combobox.CreateGraphics ' Figure out how wide it should be, and add entries
                             Dim maxWidth = combobox.Width
@@ -160,7 +160,7 @@
                         addControl(pres.ID, combobox, dropdownPres.Label)
                     Case "listBox" ' Button to launch a grid view editor
                         Dim listPres As ListPresentationElement = pres
-                        Dim list As ListPolicyElement = elemDict(pres.ID)
+                        Dim list As ListPolicyElement = DirectCast(elemDict(pres.ID), ListPolicyElement)
                         Dim button As New Button With {
                             .UseVisualStyleBackColor = True,
                             .Text = "Edit..."

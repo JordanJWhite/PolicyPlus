@@ -310,11 +310,11 @@ Public Class PolFile
             Return ped
         End Function
         Public Function AsBinary() As Byte()
-            Return Data.Clone
+            Return CType(Data.Clone(), Byte())
         End Function
         Public Shared Function FromBinary(Binary As Byte(), Optional Kind As RegistryValueKind = RegistryValueKind.Binary) As PolEntryData
             Dim ped As New PolEntryData With {.Kind = Kind}
-            ped.Data = Binary.Clone
+            ped.Data = CType(Binary.Clone(), Byte())
             Return ped
         End Function
         Public Function AsArbitrary() As Object

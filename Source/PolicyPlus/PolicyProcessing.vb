@@ -48,7 +48,7 @@
                         presentElements += 1
                     End If
                 ElseIf elem.ElementType = "boolean" Then
-                    Dim booleanElem As BooleanPolicyElement = elem
+                    Dim booleanElem As BooleanPolicyElement = DirectCast(elem, BooleanPolicyElement)
                     If PolicySource.WillDeleteValue(elemKey, elem.RegistryValue) Then
                         deletedElements += 1 ' Implicit checkboxes are deleted when the policy is disabled
                     Else
@@ -140,12 +140,12 @@
                 Case "decimal"
                     state.Add(elem.ID, CUInt(PolicySource.GetValue(elemKey, elem.RegistryValue)))
                 Case "boolean"
-                    Dim booleanElem As BooleanPolicyElement = elem
+                    Dim booleanElem As BooleanPolicyElement = DirectCast(elem, BooleanPolicyElement)
                     state.Add(elem.ID, GetRegistryListState(PolicySource, booleanElem.AffectedRegistry, elemKey, elem.RegistryValue))
                 Case "text"
                     state.Add(elem.ID, PolicySource.GetValue(elemKey, elem.RegistryValue))
                 Case "list"
-                    Dim listElem As ListPolicyElement = elem
+                    Dim listElem As ListPolicyElement = DirectCast(elem, ListPolicyElement)
                     If listElem.UserProvidesNames Then ' Keys matter, use a dictionary
                         Dim entries As New Dictionary(Of String, String)
                         For Each value In PolicySource.GetValueNames(elemKey)
@@ -169,7 +169,7 @@
                     End If
                 Case "enum"
                     ' Determine which option has results that match the Registry
-                    Dim enumElem As EnumPolicyElement = elem
+                    Dim enumElem As EnumPolicyElement = DirectCast(elem, EnumPolicyElement)
                     Dim selectedIndex As Integer = -1
                     For n = 0 To enumElem.Items.Count - 1
                         Dim enumItem = enumElem.Items(n)
@@ -237,11 +237,11 @@
                 If elem.ElementType <> "list" Then addReg(elemKey, elem.RegistryValue)
                 Select Case elem.ElementType
                     Case "boolean"
-                        Dim booleanElem As BooleanPolicyElement = elem
+                        Dim booleanElem As BooleanPolicyElement = DirectCast(elem, BooleanPolicyElement)
                         addSingleList(booleanElem.AffectedRegistry.OnValueList, elemKey)
                         addSingleList(booleanElem.AffectedRegistry.OffValueList, elemKey)
                     Case "enum"
-                        Dim enumElem As EnumPolicyElement = elem
+                        Dim enumElem As EnumPolicyElement = DirectCast(elem, EnumPolicyElement)
                         For Each e In enumElem.Items
                             addSingleList(e.ValueList, elemKey)
                         Next
@@ -305,14 +305,14 @@
                         Dim optionData = Options(elem.ID)
                         Select Case elem.ElementType
                             Case "decimal"
-                                Dim decimalElem As DecimalPolicyElement = elem
+                                Dim decimalElem As DecimalPolicyElement = DirectCast(elem, DecimalPolicyElement)
                                 If decimalElem.StoreAsText Then
                                     PolicySource.SetValue(elemKey, elem.RegistryValue, CStr(optionData), Microsoft.Win32.RegistryValueKind.String)
                                 Else
                                     PolicySource.SetValue(elemKey, elem.RegistryValue, CUInt(optionData), Microsoft.Win32.RegistryValueKind.DWord)
                                 End If
                             Case "boolean"
-                                Dim booleanElem As BooleanPolicyElement = elem
+                                Dim booleanElem As BooleanPolicyElement = DirectCast(elem, BooleanPolicyElement)
                                 Dim checkState As Boolean = optionData
                                 If booleanElem.AffectedRegistry.OnValue Is Nothing And checkState Then
                                     PolicySource.SetValue(elemKey, elem.RegistryValue, 1UI, Microsoft.Win32.RegistryValueKind.DWord)
@@ -322,11 +322,11 @@
                                 End If
                                 setList(booleanElem.AffectedRegistry, elemKey, elem.RegistryValue, checkState)
                             Case "text"
-                                Dim textElem As TextPolicyElement = elem
+                                Dim textElem As TextPolicyElement = DirectCast(elem, TextPolicyElement)
                                 Dim regType = If(textElem.RegExpandSz, Microsoft.Win32.RegistryValueKind.ExpandString, Microsoft.Win32.RegistryValueKind.String)
                                 PolicySource.SetValue(elemKey, elem.RegistryValue, optionData, regType)
                             Case "list"
-                                Dim listElem As ListPolicyElement = elem
+                                Dim listElem As ListPolicyElement = DirectCast(elem, ListPolicyElement)
                                 If Not listElem.NoPurgeOthers Then PolicySource.ClearKey(elemKey)
                                 If optionData Is Nothing Then Continue For
                                 Dim regType = If(listElem.RegExpandSz, Microsoft.Win32.RegistryValueKind.ExpandString, Microsoft.Win32.RegistryValueKind.String)
@@ -345,7 +345,7 @@
                                     Loop
                                 End If
                             Case "enum"
-                                Dim enumElem As EnumPolicyElement = elem
+                                Dim enumElem As EnumPolicyElement = DirectCast(elem, EnumPolicyElement)
                                 Dim selItem = enumElem.Items(optionData)
                                 setValue(elemKey, elem.RegistryValue, selItem.Value)
                                 setSingleList(selItem.ValueList, elemKey)
@@ -363,7 +363,7 @@
                         If elem.ElementType = "list" Then
                             PolicySource.ClearKey(elemKey)
                         ElseIf elem.ElementType = "boolean" Then
-                            Dim booleanElem As BooleanPolicyElement = elem
+                            Dim booleanElem As BooleanPolicyElement = DirectCast(elem, BooleanPolicyElement)
                             If booleanElem.AffectedRegistry.OffValue IsNot Nothing Or booleanElem.AffectedRegistry.OffValueList IsNot Nothing Then
                                 ' Non-implicit checkboxes get their "off" value set when the policy is disabled
                                 setList(booleanElem.AffectedRegistry, elemKey, elem.RegistryValue, False)

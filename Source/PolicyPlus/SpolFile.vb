@@ -92,31 +92,37 @@
                     Dim newObj As Object
                     If valueText.StartsWith("#") Then
                         newObj = CInt(valueText.Substring(1))
-                    ElseIf UInteger.TryParse(valueText, 0) Then
-                        newObj = CUInt(valueText)
-                    ElseIf Boolean.TryParse(valueText, False) Then
-                        newObj = CBool(valueText)
-                    ElseIf valueText.StartsWith("'") And valueText.EndsWith("'") Then
-                        newObj = valueText.Substring(1, valueText.Length - 2)
-                    ElseIf valueText.StartsWith("""") And valueText.EndsWith("""") Then
-                        newObj = getAllStrings(valueText, """").ToArray
-                    ElseIf valueText = "None" Then
-                        newObj = Array.CreateInstance(GetType(String), 0)
-                    ElseIf valueText = "[" Then
-                        Dim entries As New List(Of List(Of String))
-                        Do Until Trim(peekLine()) = "]"
-                            entries.Add(getAllStrings(nextLine(), """"))
-                        Loop
-                        nextLine() ' Skip the closing bracket
-                        If entries.Count = 0 Then
-                            newObj = Nothing ' PolicyProcessing will ignore an empty list element
-                        ElseIf entries(0).Count = 1 Then
-                            newObj = entries.Select(Function(l) l(0)).ToList
-                        Else
-                            newObj = entries.ToDictionary(Function(l) l(0), Function(l) l(1))
-                        End If
                     Else
-                        Throw New Exception("Unknown option data format.")
+                        Dim parsedUInt As UInteger
+                        If UInteger.TryParse(valueText, parsedUInt) Then
+                            newObj = parsedUInt
+                        Else
+                            Dim parsedBool As Boolean
+                            If Boolean.TryParse(valueText, parsedBool) Then
+                                newObj = parsedBool
+                            ElseIf valueText.StartsWith("'") And valueText.EndsWith("'") Then
+                                newObj = valueText.Substring(1, valueText.Length - 2)
+                            ElseIf valueText.StartsWith("""") And valueText.EndsWith("""") Then
+                                newObj = getAllStrings(valueText, """").ToArray
+                            ElseIf valueText = "None" Then
+                                newObj = Array.CreateInstance(GetType(String), 0)
+                            ElseIf valueText = "[" Then
+                                Dim entries As New List(Of List(Of String))
+                                Do Until Trim(peekLine()) = "]"
+                                    entries.Add(getAllStrings(nextLine(), """"))
+                                Loop
+                                nextLine() ' Skip the closing bracket
+                                If entries.Count = 0 Then
+                                    newObj = Nothing ' PolicyProcessing will ignore an empty list element
+                                ElseIf entries(0).Count = 1 Then
+                                    newObj = entries.Select(Function(l) l(0)).ToList
+                                Else
+                                    newObj = entries.ToDictionary(Function(l) l(0), Function(l) l(1))
+                                End If
+                            Else
+                                Throw New Exception("Unknown option data format.")
+                            End If
+                        End If
                     End If
                     singlePolicy.ExtraOptions.Add(optionParts(0), newObj)
                 Loop
