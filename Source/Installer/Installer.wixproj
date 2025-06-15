@@ -30,9 +30,9 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PolicyPlus\PolicyPlus.vbproj">
+    <ProjectReference Include="..\PolicyPlus\PolicyPlus.csproj">
       <Name>PolicyPlus</Name>
-      <Project>{3e52e1e6-4fcf-403d-a84c-9c5cb0edc739}</Project>
+      <Project>{8c76608d-8397-0fcc-2a14-5622d27af399}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
