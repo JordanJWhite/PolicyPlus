@@ -68,3 +68,6 @@ Policy Plus is a powerful tool and so may cause problems if used recklessly, but
 If you would prefer to not trust binaries, feel free to read the code and [compile Policy Plus from source](https://github.com/Fleex255/PolicyPlus/blob/master/COMPILE.md).
 You can also verify that a build was created from the published code by examining the output of a GitHub Actions run:
 the input commit hash can be found under "checkout master" and the output executable hash can be found under "compute hash."
+
+## MSI Installer
+Pre-built installer packages can be created using the WiX project in the `Installer` folder. See `Installer/README.md` for build instructions.
