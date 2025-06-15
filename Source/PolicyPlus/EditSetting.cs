@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -147,7 +146,7 @@ namespace PolicyPlus
                                                 int argresult = 0;
                                                 if (!int.TryParse(text.Text, out argresult))
                                                     text.Text = decimalTextPres.DefaultValue.ToString();
-                                                int curNum = Conversions.ToInteger(text.Text);
+                                                int curNum = Convert.ToInt32(text.Text);
                                                 if (curNum > numeric.Maximum)
                                                     text.Text = numeric.Maximum.ToString();
                                                 if (curNum < numeric.Minimum)
@@ -237,7 +236,7 @@ namespace PolicyPlus
                                     UseVisualStyleBackColor = true,
                                     Text = "Edit..."
                                 };
-                                button.Click += (sender, e) => { if (My.MyProject.Forms.ListEditor.PresentDialog(listPres.Label, button.Tag, list.UserProvidesNames) == DialogResult.OK) button.Tag = My.MyProject.Forms.ListEditor.FinalData; };
+                                button.Click += (sender, e) => { using (var listEditorForm = new ListEditor()) { if (listEditorForm.PresentDialog(listPres.Label, button.Tag, list.UserProvidesNames) == DialogResult.OK) button.Tag = listEditorForm.FinalData; } };
                                 addControl(pres.ID, button, listPres.Label);
                                 break;
                             }
@@ -287,30 +286,30 @@ namespace PolicyPlus
                                 }
                                 else
                                 {
-                                    ((NumericUpDown)uiControl).Value = Conversions.ToDecimal(kv.Value);
+                                    ((NumericUpDown)uiControl).Value = Convert.ToDecimal(kv.Value);
                                 }
                             }
                             else if (kv.Value is string) // Text box or combo box
                             {
                                 if (uiControl is ComboBox)
                                 {
-                                    ((ComboBox)uiControl).Text = Conversions.ToString(kv.Value);
+                                    ((ComboBox)uiControl).Text = Convert.ToString(kv.Value);
                                 }
                                 else
                                 {
-                                    ((TextBox)uiControl).Text = Conversions.ToString(kv.Value);
+                                    ((TextBox)uiControl).Text = Convert.ToString(kv.Value);
                                 }
                             }
                             else if (kv.Value is int) // Dropdown list
                             {
                                 ComboBox combobox = (ComboBox)uiControl;
-                                var matchingItem = combobox.Items.OfType<DropdownPresentationMap>().FirstOrDefault(i => i.ID == Conversions.ToInteger(kv.Value));
+                                var matchingItem = combobox.Items.OfType<DropdownPresentationMap>().FirstOrDefault(i => i.ID == Convert.ToInt32(kv.Value));
                                 if (matchingItem is not null)
                                     combobox.SelectedItem = matchingItem;
                             }
                             else if (kv.Value is bool) // Check box
                             {
-                                ((CheckBox)uiControl).Checked = Conversions.ToBoolean(kv.Value);
+                                ((CheckBox)uiControl).Checked = Convert.ToBoolean(kv.Value);
                             }
                             else if (kv.Value is string[]) // Multiline text box
                             {
@@ -368,7 +367,7 @@ namespace PolicyPlus
                                 {
                                     if (uiControl is TextBox)
                                     {
-                                        options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
+                                        options.Add(elem.ID, Convert.ToUInt32(((TextBox)uiControl).Text));
                                     }
                                     else
                                     {
@@ -445,7 +444,7 @@ namespace PolicyPlus
             this.CompComments = CompComments;
             this.UserComments = UserComments;
             ChangesMade = false;
-            return ShowDialog();
+            return this.ShowDialog();
         }
         private void StateRadiosChanged(object sender, EventArgs e)
         {

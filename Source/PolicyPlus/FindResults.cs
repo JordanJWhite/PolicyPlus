@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -45,7 +43,7 @@ namespace PolicyPlus
             // Open the dialog normally, like from the main form
             if (!HasSearched)
             {
-                Interaction.MsgBox("No search has been run yet, so there are no results to display.", MsgBoxStyle.Information);
+                MessageBox.Show("No search has been run yet, so there are no results to display.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return DialogResult.Cancel;
             }
             CancelingSearch = false;
@@ -86,9 +84,8 @@ namespace PolicyPlus
             };
             foreach (var policy in Workspace.Policies)
             {
-                object localVolatileRead() { object argaddress = CancelingSearch; var ret = System.Threading.Thread.VolatileRead(ref argaddress); CancelingSearch = Conversions.ToBoolean(argaddress); return ret; }
-
-                if (Conversions.ToBoolean(localVolatileRead()))
+                bool isCanceled = System.Threading.Volatile.Read(ref CancelingSearch);
+                if (isCanceled)
                 {
                     stoppedByCancel = true;
                     break;
@@ -110,12 +107,11 @@ namespace PolicyPlus
                         }));
                 }
             }
-            object localVolatileRead1() { object argaddress1 = CancelDueToFormClose; var ret = System.Threading.Thread.VolatileRead(ref argaddress1); CancelDueToFormClose = Conversions.ToBoolean(argaddress1); return ret; }
-
-            object localVolatileRead2() { object argaddress2 = CancelDueToFormClose; var ret = System.Threading.Thread.VolatileRead(ref argaddress2); CancelDueToFormClose = Conversions.ToBoolean(argaddress2); return ret; }
-
-            if (stoppedByCancel && Conversions.ToBoolean(localVolatileRead2()))
+            
+            bool isFormClosing = System.Threading.Volatile.Read(ref CancelDueToFormClose);
+            if (stoppedByCancel && isFormClosing)
                 return; // Avoid accessing a disposed object
+                
             Invoke(new Action(() =>
                 {
                     addPendingInsertions();
@@ -127,12 +123,8 @@ namespace PolicyPlus
         }
         public void StopSearch(bool Force)
         {
-            object argaddress = CancelingSearch;
-            System.Threading.Thread.VolatileWrite(ref argaddress, true);
-            CancelingSearch = Conversions.ToBoolean(argaddress);
-            object argaddress1 = CancelDueToFormClose;
-            System.Threading.Thread.VolatileWrite(ref argaddress1, Force);
-            CancelDueToFormClose = Conversions.ToBoolean(argaddress1);
+            System.Threading.Volatile.Write(ref CancelingSearch, true);
+            System.Threading.Volatile.Write(ref CancelDueToFormClose, Force);
         }
         private void FindResults_Shown(object sender, EventArgs e)
         {

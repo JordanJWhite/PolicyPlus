@@ -67,11 +67,13 @@ namespace PolicyPlus
         }
         private void SupportButton_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailSupport.PresentDialog(SelectedPolicy.SupportedOn);
+            var detailSupportForm = new DetailSupport();
+            detailSupportForm.PresentDialog(SelectedPolicy.SupportedOn);
         }
         private void CategoryButton_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailCategory.PresentDialog(SelectedPolicy.Category);
+            var detailCategoryForm = new DetailCategory();
+            detailCategoryForm.PresentDialog(SelectedPolicy.Category);
         }
     }
 }

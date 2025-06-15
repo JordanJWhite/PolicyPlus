@@ -82,7 +82,7 @@ namespace PolicyPlus
             var revPrefixes = new Dictionary<string, string>(); // Opposite-direction prefix lookup
             foreach (var kv in Table)
             {
-                string[] idParts = Microsoft.VisualBasic.Strings.Split(kv.Key, ":", 2);
+                string[] idParts = kv.Key.Split(new[] { ':' }, 2);
                 if (!revPrefixes.ContainsKey(idParts[0]))
                 {
                     string prefixId = idParts[0].Replace('.', '_') + "__" + resNum;
@@ -102,7 +102,7 @@ namespace PolicyPlus
             var commentTable = new Dictionary<string, string>();
             foreach (var comment in Comments)
             {
-                string[] refParts = Microsoft.VisualBasic.Strings.Split(comment.Key, ":", 2);
+                string[] refParts = comment.Key.Split(new[] { ':' }, 2);
                 string polNamespace = Prefixes[refParts[0]];
                 string stringRef = comment.Value;
                 string stringId = stringRef.Substring(11, stringRef.Length - 12); // "$(resource." is 11 characters long

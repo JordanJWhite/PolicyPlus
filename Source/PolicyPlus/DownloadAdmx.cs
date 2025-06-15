@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -153,9 +152,9 @@ namespace PolicyPlus
                         System.IO.Directory.Delete(tempPath, true);
                         setProgress("Done.");
                         Invoke(new Action(() =>
-  {
+                        {
                             SetIsBusy(false);
-                            if (Interaction.MsgBox("ADMX files downloaded successfully. Open them now?", MsgBoxStyle.YesNo | MsgBoxStyle.Question) == MsgBoxResult.Yes)
+                            if (MessageBox.Show("ADMX files downloaded successfully. Open them now?", "Download Complete", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             {
                                 NewPolicySourceFolder = destination;
                             }
@@ -165,9 +164,9 @@ namespace PolicyPlus
                     catch (Exception ex)
                     {
                         Invoke(new Action(() =>
-  {
+                        {
                             SetIsBusy(false);
-                            Interaction.MsgBox("Failed to " + failPhase + ".", MsgBoxStyle.Exclamation);
+                            MessageBox.Show("Failed to " + failPhase + ".", "Download Failed", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         }));
                     }
                 });

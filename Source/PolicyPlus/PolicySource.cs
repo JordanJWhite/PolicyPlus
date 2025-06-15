@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
+using System.Text;
 using Microsoft.Win32;
 
 namespace PolicyPlus
@@ -51,13 +50,13 @@ namespace PolicyPlus
                 throw new InvalidDataException("Unknown (newer) version of POL format");
             string readSz() // Read a null-terminated UTF-16LE string
             {
-                var sb = new System.Text.StringBuilder();
+                var sb = new StringBuilder();
                 do
                 {
                     int charCode = Stream.ReadUInt16();
                     if (charCode == 0)
                         break;
-                    sb.Append(Strings.ChrW(charCode));
+                    sb.Append(Convert.ToChar(charCode));
                 }
                 while (true);
                 return sb.ToString();
@@ -69,7 +68,7 @@ namespace PolicyPlus
                 string key = readSz();
                 Stream.BaseStream.Position += 2L; // Skip ";"
                 string value = readSz();
-                if (Stream.ReadUInt16() != Strings.Asc(';'))
+                if (Stream.ReadUInt16() != ';')
                     Stream.BaseStream.Position += 2L; // MS documentation indicates there might be an extra null before the ";" after the value name
                 ped.Kind = (RegistryValueKind)Stream.ReadInt32();
                 Stream.BaseStream.Position += 2L; // ";"
@@ -104,7 +103,7 @@ namespace PolicyPlus
             foreach (var kv in Entries)
             {
                 Writer.Write('[');
-                string[] pathparts = Strings.Split(CasePreservation[kv.Key], @"\\", 2);
+                string[] pathparts = CasePreservation[kv.Key].Split(new[] { @"\\" }, 2, StringSplitOptions.None);
                 writeSz(pathparts[0]); // Key name
                 Writer.Write(';');
                 writeSz(pathparts[1]); // Value name
@@ -171,7 +170,7 @@ namespace PolicyPlus
                 else if ((kv.Key ?? "") == (GetDictKey(Key, "**deletevalues") ?? ""))
                 {
                     string lowerVal = Value.ToLowerInvariant();
-                    string[] deletedValues = Strings.Split(kv.Value.AsString(), ";");
+                    string[] deletedValues = kv.Value.AsString().Split(';');
                     if (deletedValues.Any(s => (s.ToLowerInvariant() ?? "") == (lowerVal ?? "")))
                         willDelete = true;
                 }
@@ -194,7 +193,7 @@ namespace PolicyPlus
             {
                 if (k.StartsWith(prefix))
                 {
-                    string valName = Strings.Split(CasePreservation[k], @"\\", 2)[1];
+                    string valName = CasePreservation[k].Split(new[] { @"\\" }, 2, StringSplitOptions.None)[1];
                     if (!(OnlyValues & valName.StartsWith("**")))
                         valNames.Add(valName);
                 }
@@ -209,11 +208,11 @@ namespace PolicyPlus
             var oldEntries = OldVersion.Entries.Keys.Where(k => !k.Contains(@"\\**")).ToList();
             foreach (var kv in Entries)
             {
-                string[] parts = Strings.Split(kv.Key, @"\\", 2); // Key, value
-                string[] casedParts = Strings.Split(CasePreservation[kv.Key], @"\\", 2);
+                string[] parts = kv.Key.Split(new[] { @"\\" }, 2, StringSplitOptions.None); // Key, value
+                string[] casedParts = CasePreservation[kv.Key].Split(new[] { @"\\" }, 2, StringSplitOptions.None);
                 if (parts[1].StartsWith("**del."))
                 {
-                    Target.DeleteValue(parts[0], Strings.Split(parts[1], ".", 2)[1]);
+                    Target.DeleteValue(parts[0], parts[1].Split(new[] { '.' }, 2)[1]);
                 }
                 else if (parts[1].StartsWith("**delvals"))
                 {
@@ -221,12 +220,12 @@ namespace PolicyPlus
                 }
                 else if (parts[1] == "**deletevalues")
                 {
-                    foreach (var entry in Strings.Split(kv.Value.AsString(), ";"))
+                    foreach (var entry in kv.Value.AsString().Split(';'))
                         Target.DeleteValue(parts[0], entry);
                 }
                 else if (parts[1].StartsWith("**deletekeys"))
                 {
-                    foreach (var entry in Strings.Split(kv.Value.AsString(), ";"))
+                    foreach (var entry in kv.Value.AsString().Split(';'))
                         Target.ClearKey(parts[0] + @"\" + entry);
                 }
                 else if (!string.IsNullOrEmpty(parts[1]) & !parts[1].StartsWith("**"))
@@ -238,7 +237,7 @@ namespace PolicyPlus
             }
             foreach (var e in oldEntries.Where(RegistryPolicyProxy.IsPolicyKey)) // Remove the forgotten entries from the Registry
             {
-                string[] parts = Strings.Split(e, @"\\", 2);
+                string[] parts = e.Split(new[] { @"\\" }, 2, StringSplitOptions.None);
                 Target.ForgetValue(parts[0], parts[1]);
             }
         }
@@ -268,10 +267,10 @@ namespace PolicyPlus
             {
                 if (entry.StartsWith(prefix + @"\", StringComparison.InvariantCultureIgnoreCase))
                     continue; // Values are delimited by an extra slash
-                string properCased = Strings.Split(CasePreservation[entry], @"\\", 2)[0];
+                string properCased = CasePreservation[entry].Split(new[] { @"\\" }, 2, StringSplitOptions.None)[0];
                 if (prefix.Length >= properCased.Length)
                     continue; // Do not return the requested key itself
-                string localKeyName = Strings.Split(properCased.Substring(prefix.Length), @"\", 2)[0];
+                string localKeyName = properCased.Substring(prefix.Length).Split('\\')[0];
                 if (!subkeyNames.Contains(localKeyName, StringComparer.InvariantCultureIgnoreCase))
                     subkeyNames.Add(localKeyName);
             }
@@ -310,13 +309,13 @@ namespace PolicyPlus
             public byte[] Data;
             public string AsString() // Get a UTF-16LE string
             {
-                var sb = new System.Text.StringBuilder();
-                for (int x = 0, loopTo = Data.Length / 2 - 1; x <= loopTo; x++)
+                var sb = new StringBuilder();
+                for (int x = 0; x < Data.Length / 2; x++)
                 {
                     int charCode = Data[x * 2] + (Data[x * 2 + 1] << 8);
                     if (charCode == 0)
                         break;
-                    sb.Append(Strings.ChrW(charCode));
+                    sb.Append(Convert.ToChar(charCode));
                 }
                 return sb.ToString();
             }
@@ -326,9 +325,9 @@ namespace PolicyPlus
                 if (Expand)
                     ped.Kind = RegistryValueKind.ExpandString;
                 var data = new byte[Text.Length * 2 + 1 + 1];
-                for (int x = 0, loopTo = Text.Length - 1; x <= loopTo; x++)
+                for (int x = 0; x < Text.Length; x++)
                 {
-                    int charCode = Strings.AscW(Text[x]);
+                    int charCode = Convert.ToInt32(Text[x]);
                     data[x * 2] = (byte)(charCode & 0xFF);
                     data[x * 2 + 1] = (byte)(charCode >> 8);
                 }
@@ -369,10 +368,10 @@ namespace PolicyPlus
             public string[] AsMultiString()
             {
                 var strings = new List<string>();
-                var sb = new System.Text.StringBuilder();
-                for (double n = 0d, loopTo = Data.Length / 2d - 1d; n <= loopTo; n++)
+                var sb = new StringBuilder();
+                for (double n = 0d; n < Data.Length / 2d; n++)
                 {
-                    byte charCode = (byte)(Data[(int)Math.Round(n * 2d)] + (Data[(int)Math.Round(n * 2d + 1d)] << 8));
+                    byte charCode = (byte)(Data[(int)(n * 2d)] + (Data[(int)(n * 2d + 1d)] << 8));
                     if (charCode == 0)
                     {
                         if (sb.Length == 0)
@@ -382,7 +381,7 @@ namespace PolicyPlus
                     }
                     else
                     {
-                        sb.Append(Strings.ChrW(charCode));
+                        sb.Append(Convert.ToChar(charCode));
                     }
                 }
                 return strings.ToArray();
@@ -396,7 +395,7 @@ namespace PolicyPlus
                 {
                     foreach (var c in s)
                     {
-                        int charCode = Microsoft.VisualBasic.Strings.AscW(c);
+                        int charCode = Convert.ToInt32(c);
                         data[n] = (byte)(charCode & 0xFF);
                         data[n + 1] = (byte)(charCode >> 8);
                         n += 2;
@@ -455,19 +454,19 @@ namespace PolicyPlus
                 {
                     case RegistryValueKind.String:
                         {
-                            return FromString(Conversions.ToString(Data));
+                            return FromString(Convert.ToString(Data));
                         }
                     case RegistryValueKind.DWord:
                         {
-                            return FromDword(Conversions.ToUInteger(Data));
+                            return FromDword(Convert.ToUInt32(Data));
                         }
                     case RegistryValueKind.ExpandString:
                         {
-                            return FromString(Conversions.ToString(Data), true);
+                            return FromString(Convert.ToString(Data), true);
                         }
                     case RegistryValueKind.QWord:
                         {
-                            return FromQword(Conversions.ToULong(Data));
+                            return FromQword(Convert.ToUInt64(Data));
                         }
                     case RegistryValueKind.MultiString:
                         {
@@ -510,11 +509,11 @@ namespace PolicyPlus
         {
             if (Data is uint)
             {
-                Data = new ReinterpretableDword() { Unsigned = Conversions.ToUInteger(Data) }.Signed;
+                Data = new ReinterpretableDword() { Unsigned = Convert.ToUInt32(Data) }.Signed;
             }
             else if (Data is ulong)
             {
-                Data = new ReinterpretableQword() { Unsigned = Conversions.ToULong(Data) }.Signed;
+                Data = new ReinterpretableQword() { Unsigned = Convert.ToUInt64(Data) }.Signed;
             }
             using (var regKey = RootKey.CreateSubKey(Key))
             {
@@ -541,11 +540,11 @@ namespace PolicyPlus
                 var data = regKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
                 if (data is int)
                 {
-                    return new ReinterpretableDword() { Signed = Conversions.ToInteger(data) }.Unsigned;
+                    return new ReinterpretableDword() { Signed = Convert.ToInt32(data) }.Unsigned;
                 }
                 else if (data is long)
                 {
-                    return new ReinterpretableQword() { Signed = Conversions.ToLong(data) }.Unsigned;
+                    return new ReinterpretableQword() { Signed = Convert.ToInt64(data) }.Unsigned;
                 }
                 else
                 {

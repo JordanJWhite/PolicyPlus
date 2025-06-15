@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Win32;
 
 namespace PolicyPlus
@@ -32,18 +30,18 @@ namespace PolicyPlus
                     }
                 case PolicyLoaderSource.LocalRegistry:
                     {
-                        string[] pathParts = Strings.Split(Argument, @"\", 2);
+                        string[] pathParts = Argument.Split(new[] { '\\' }, 2);
                         string baseName = pathParts[0].ToLowerInvariant();
                         RegistryKey baseKey;
-                        if (baseName == "hkcu" | baseName == "hkey_current_user")
+                        if (baseName == "hkcu" || baseName == "hkey_current_user")
                         {
                             baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
                         }
-                        else if (baseName == "hku" | baseName == "hkey_users")
+                        else if (baseName == "hku" || baseName == "hkey_users")
                         {
                             baseKey = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Default);
                         }
-                        else if (baseName == "hklm" | baseName == "hkey_local_machine")
+                        else if (baseName == "hklm" || baseName == "hkey_local_machine")
                         {
                             baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
                         }
@@ -183,7 +181,7 @@ namespace PolicyPlus
         {
             if (SourceType == PolicyLoaderSource.NtUserDat & SourceObject is RegistryPolicyProxy)
             {
-                string subkeyName = Strings.Split(MainSourceRegKey.Name, @"\", 2)[1]; // Remove the host hive name
+                string subkeyName = MainSourceRegKey.Name.Split(new[] { '\\' }, 2)[1]; // Remove the host hive name
                 MainSourceRegKey.Dispose();
                 // Fix the ref parameter by passing without ref
                 return ((PInvoke.RegUnLoadKeyW(new IntPtr(unchecked((int)0x80000002)), subkeyName)) == 0);
@@ -247,7 +245,7 @@ namespace PolicyPlus
         public string GetCmtxPath()
         {
             // Get the path to the comments file, or nothing if comments don't work
-            if (SourceType == PolicyLoaderSource.PolFile | SourceType == PolicyLoaderSource.NtUserDat)
+            if (SourceType == PolicyLoaderSource.PolFile || SourceType == PolicyLoaderSource.NtUserDat)
             {
                 return System.IO.Path.ChangeExtension(MainSourcePath, "cmtx");
             }
@@ -291,13 +289,21 @@ namespace PolicyPlus
                 var lines = System.IO.File.ReadLines(GptIniPath).ToList();
                 using (var fGpt = new System.IO.StreamWriter(GptIniPath, false))
                 {
-                    bool seenMachExts = default, seenUserExts = default, seenVersion = default;
+                    bool seenMachExts = false, seenUserExts = false, seenVersion = false;
                     foreach (var line in lines)
                     {
                         if (line.StartsWith("Version", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            int curVersion = Conversions.ToInteger(Strings.Split(line, "=", 2)[1]);
-                            curVersion += User ? 0x10000 : 1;
+                            var parts = line.Split('=');
+                            int curVersion = 0;
+                            if (parts.Length > 1 && int.TryParse(parts[1], out curVersion))
+                            {
+                                curVersion += User ? 0x10000 : 1;
+                            }
+                            else
+                            {
+                                curVersion = 0x10001;
+                            }
                             fGpt.WriteLine("Version=" + curVersion);
                             seenVersion = true;
                         }

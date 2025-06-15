@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -124,8 +123,9 @@ namespace PolicyPlus
         private void UserBrowseRegistryButton_Click(object sender, EventArgs e)
         {
             // Browse for a user Registry hive
-            if (My.MyProject.Forms.OpenUserRegistry.ShowDialog() == DialogResult.OK)
-                UserHivePathTextbox.Text = My.MyProject.Forms.OpenUserRegistry.SelectedFilePath;
+            var openUserRegistry = Program.GetOpenUserRegistryForm();
+            if (openUserRegistry.ShowDialog() == DialogResult.OK)
+                UserHivePathTextbox.Text = openUserRegistry.SelectedFilePath;
         }
         private void OkButton_Click(object sender, EventArgs e)
         {
@@ -151,7 +151,7 @@ namespace PolicyPlus
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("The computer policy loader could not be created. " + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show("The computer policy loader could not be created. " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             try
@@ -183,7 +183,7 @@ namespace PolicyPlus
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("The user policy loader could not be created. " + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show("The user policy loader could not be created. " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             DialogResult = DialogResult.OK;
@@ -191,8 +191,9 @@ namespace PolicyPlus
         private void UserBrowseGpoButton_Click(object sender, EventArgs e)
         {
             // Browse for a per-user GPO
-            if (My.MyProject.Forms.OpenUserGpo.ShowDialog() == DialogResult.OK)
-                UserGpoSidTextbox.Text = My.MyProject.Forms.OpenUserGpo.SelectedSid;
+            var openUserGpo = Program.GetOpenUserGpoForm();
+            if (openUserGpo.ShowDialog() == DialogResult.OK)
+                UserGpoSidTextbox.Text = openUserGpo.SelectedSid;
         }
         private void OpenPol_KeyDown(object sender, KeyEventArgs e)
         {

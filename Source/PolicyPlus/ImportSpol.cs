@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -28,11 +27,11 @@ namespace PolicyPlus
             try
             {
                 var spol = SpolFile.FromText(TextSpol.Text);
-                Interaction.MsgBox("Validation successful, " + spol.Policies.Count + " policy settings found.", MsgBoxStyle.Information);
+                MessageBox.Show($"Validation successful, {spol.Policies.Count} policy settings found.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("SPOL validation failed: " + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show($"SPOL validation failed: {ex.Message}", "Validation Failed", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
         private void ButtonApply_Click(object sender, EventArgs e)
@@ -44,7 +43,7 @@ namespace PolicyPlus
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("The SPOL text is invalid: " + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show($"The SPOL text is invalid: {ex.Message}", "Invalid SPOL", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
         private void ImportSpol_Shown(object sender, EventArgs e)
@@ -63,9 +62,10 @@ namespace PolicyPlus
         }
         private void ButtonReset_Click(object sender, EventArgs e)
         {
-            if (Interaction.MsgBox("Are you sure you want to reset the text box?", MsgBoxStyle.Question | MsgBoxStyle.YesNo) == MsgBoxResult.Yes)
+            var result = MessageBox.Show("Are you sure you want to reset the text box?", "Reset Text", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result == DialogResult.Yes)
             {
-                TextSpol.Text = "Policy Plus Semantic Policy" + Constants.vbCrLf + Constants.vbCrLf;
+                TextSpol.Text = "Policy Plus Semantic Policy" + System.Environment.NewLine + System.Environment.NewLine;
             }
         }
     }

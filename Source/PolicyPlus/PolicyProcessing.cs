@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -144,7 +143,7 @@ namespace PolicyPlus
                         var sourceVal = Source.GetValue(Key, ValueName);
                         if (!(sourceVal is uint) & !(sourceVal is int))
                             return false;
-                        return Conversions.ToLong(sourceVal) == Value.NumberValue;
+                        return Convert.ToInt64(sourceVal) == Value.NumberValue;
                     }
                 case PolicyRegistryValueType.Text:
                     {
@@ -153,7 +152,7 @@ namespace PolicyPlus
                         var sourceVal = Source.GetValue(Key, ValueName);
                         if (!(sourceVal is string))
                             return false;
-                        return (Conversions.ToString(sourceVal) ?? "") == (Value.StringValue ?? "");
+                        return (Convert.ToString(sourceVal) ?? "") == (Value.StringValue ?? "");
                     }
 
                 default:
@@ -211,7 +210,7 @@ namespace PolicyPlus
                 {
                     case "decimal":
                         {
-                            state.Add(elem.ID, Conversions.ToUInteger(PolicySource.GetValue(elemKey, elem.RegistryValue)));
+                            state.Add(elem.ID, Convert.ToUInt32(PolicySource.GetValue(elemKey, elem.RegistryValue)));
                             break;
                         }
                     case "boolean":
@@ -232,7 +231,7 @@ namespace PolicyPlus
                             {
                                 var entries = new Dictionary<string, string>();
                                 foreach (var value in PolicySource.GetValueNames(elemKey))
-                                    entries.Add(value, Conversions.ToString(PolicySource.GetValue(elemKey, value)));
+                                    entries.Add(value, Convert.ToString(PolicySource.GetValue(elemKey, value)));
                                 state.Add(elem.ID, entries);
                             }
                             else // Keys don't matter, use a list
@@ -243,7 +242,7 @@ namespace PolicyPlus
                                     int n = 1;
                                     while (PolicySource.ContainsValue(elemKey, elem.RegistryValue + n))
                                     {
-                                        entries.Add(Conversions.ToString(PolicySource.GetValue(elemKey, elem.RegistryValue + n)));
+                                        entries.Add(Convert.ToString(PolicySource.GetValue(elemKey, elem.RegistryValue + n)));
                                         n += 1;
                                     }
                                 }
@@ -262,7 +261,7 @@ namespace PolicyPlus
                             // Determine which option has results that match the Registry
                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
                             int selectedIndex = -1;
-                            for (int n = 0, loopTo = enumElem.Items.Count - 1; n <= loopTo; n++)
+                            for (int n = 0; n < enumElem.Items.Count; n++)
                             {
                                 var enumItem = enumElem.Items[n];
                                 if (ValuePresent(enumItem.Value, PolicySource, elemKey, elem.RegistryValue))
@@ -300,7 +299,7 @@ namespace PolicyPlus
                 if (isListAllPresent(RegList.OnValueList))
                     return true;
             }
-            else if (Conversions.ToUInteger(PolicySource.GetValue(DefaultKey, DefaultValueName)) == 1U)
+            else if (Convert.ToUInt32(PolicySource.GetValue(DefaultKey, DefaultValueName)) == 1U)
                 return true;
             if (RegList.OffValue is not null)
             {
@@ -472,11 +471,11 @@ namespace PolicyPlus
                                             DecimalPolicyElement decimalElem = (DecimalPolicyElement)elem;
                                             if (decimalElem.StoreAsText)
                                             {
-                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Conversions.ToString(optionData), Microsoft.Win32.RegistryValueKind.String);
+                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Convert.ToString(optionData), Microsoft.Win32.RegistryValueKind.String);
                                             }
                                             else
                                             {
-                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Conversions.ToUInteger(optionData), Microsoft.Win32.RegistryValueKind.DWord);
+                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Convert.ToUInt32(optionData), Microsoft.Win32.RegistryValueKind.DWord);
                                             }
 
                                             break;
@@ -484,7 +483,7 @@ namespace PolicyPlus
                                     case "boolean":
                                         {
                                             BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
-                                            bool checkState = Conversions.ToBoolean(optionData);
+                                            bool checkState = Convert.ToBoolean(optionData);
                                             if (booleanElem.AffectedRegistry.OnValue is null & checkState)
                                             {
                                                 PolicySource.SetValue(elemKey, elem.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
@@ -534,7 +533,7 @@ namespace PolicyPlus
                                     case "enum":
                                         {
                                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
-                                            var selItem = enumElem.Items[Conversions.ToInteger(optionData)];
+                                            var selItem = enumElem.Items[Convert.ToInt32(optionData)];
                                             setValue(elemKey, elem.RegistryValue, selItem.Value);
                                             setSingleList(selItem.ValueList, elemKey);
                                             break;
@@ -603,7 +602,7 @@ namespace PolicyPlus
                     return false; // Ranges only apply to parent products
                 int rangeMin = SupportEntry.RawSupportEntry.MinVersion ?? 0;
                 int rangeMax = SupportEntry.RawSupportEntry.MaxVersion ?? SupportEntry.Product.Children.Max(p => p.RawProduct.Version);
-                for (int v = rangeMin, loopTo = rangeMax; v <= loopTo; v++)
+                for (int v = rangeMin; v <= rangeMax; v++)
                 {
                     int version = v; // To suppress compiler warnings about iteration variable in lambdas
                     var subproduct = SupportEntry.Product.Children.FirstOrDefault(p => p.RawProduct.Version == version);

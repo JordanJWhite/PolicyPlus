@@ -82,7 +82,8 @@ namespace PolicyPlus
             PolicyPlusSupportEntry supEntry = (PolicyPlusSupportEntry)EntriesListview.SelectedItems[0].Tag;
             if (supEntry.Product is not null)
             {
-                My.MyProject.Forms.DetailProduct.PresentDialog(supEntry.Product);
+                var detailProductForm = new DetailProduct();
+                detailProductForm.PresentDialog(supEntry.Product);
             }
             else if (supEntry.SupportDefinition is not null)
             {

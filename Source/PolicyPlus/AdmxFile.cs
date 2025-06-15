@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -157,7 +156,7 @@ namespace PolicyPlus
                                     else if (subElement.LocalName == "decimal")
                                     {
                                         regItem.RegistryType = PolicyRegistryValueType.Numeric;
-                                        regItem.NumberValue = Conversions.ToUInteger(subElement.Attributes["value"].Value);
+                                        regItem.NumberValue = Convert.ToUInt32(subElement.Attributes["value"].Value);
                                         break;
                                     }
                                     else if (subElement.LocalName == "string")
@@ -276,10 +275,10 @@ namespace PolicyPlus
                                                         case "decimal":
                                                             {
                                                                 var decimalEntry = new DecimalPolicyElement();
-                                                                decimalEntry.Minimum = Conversions.ToUInteger(uiElement.AttributeOrDefault("minValue", 0));
-                                                                decimalEntry.Maximum = Conversions.ToUInteger(uiElement.AttributeOrDefault("maxValue", uint.MaxValue));
-                                                                decimalEntry.NoOverwrite = Conversions.ToBoolean(uiElement.AttributeOrDefault("soft", false));
-                                                                decimalEntry.StoreAsText = Conversions.ToBoolean(uiElement.AttributeOrDefault("storeAsText", false));
+                                                                decimalEntry.Minimum = Convert.ToUInt32(uiElement.AttributeOrDefault("minValue", 0));
+                                                                decimalEntry.Maximum = Convert.ToUInt32(uiElement.AttributeOrDefault("maxValue", uint.MaxValue));
+                                                                decimalEntry.NoOverwrite = Convert.ToBoolean(uiElement.AttributeOrDefault("soft", false));
+                                                                decimalEntry.StoreAsText = Convert.ToBoolean(uiElement.AttributeOrDefault("storeAsText", false));
                                                                 entry = decimalEntry;
                                                                 break;
                                                             }
@@ -293,19 +292,19 @@ namespace PolicyPlus
                                                         case "text":
                                                             {
                                                                 var textEntry = new TextPolicyElement();
-                                                                textEntry.MaxLength = Conversions.ToInteger(uiElement.AttributeOrDefault("maxLength", 255));
-                                                                textEntry.Required = Conversions.ToBoolean(uiElement.AttributeOrDefault("required", false));
-                                                                textEntry.RegExpandSz = Conversions.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
-                                                                textEntry.NoOverwrite = Conversions.ToBoolean(uiElement.AttributeOrDefault("soft", false));
+                                                                textEntry.MaxLength = Convert.ToInt32(uiElement.AttributeOrDefault("maxLength", 255));
+                                                                textEntry.Required = Convert.ToBoolean(uiElement.AttributeOrDefault("required", false));
+                                                                textEntry.RegExpandSz = Convert.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
+                                                                textEntry.NoOverwrite = Convert.ToBoolean(uiElement.AttributeOrDefault("soft", false));
                                                                 entry = textEntry;
                                                                 break;
                                                             }
                                                         case "list":
                                                             {
                                                                 var listEntry = new ListPolicyElement();
-                                                                listEntry.NoPurgeOthers = Conversions.ToBoolean(uiElement.AttributeOrDefault("additive", false));
-                                                                listEntry.RegExpandSz = Conversions.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
-                                                                listEntry.UserProvidesNames = Conversions.ToBoolean(uiElement.AttributeOrDefault("explicitValue", false));
+                                                                listEntry.NoPurgeOthers = Convert.ToBoolean(uiElement.AttributeOrDefault("additive", false));
+                                                                listEntry.RegExpandSz = Convert.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
+                                                                listEntry.UserProvidesNames = Convert.ToBoolean(uiElement.AttributeOrDefault("explicitValue", false));
                                                                 listEntry.HasPrefix = uiElement.Attributes["valuePrefix"] is not null;
                                                                 listEntry.RegistryValue = uiElement.AttributeOrNull("valuePrefix");
                                                                 entry = listEntry;
@@ -314,7 +313,7 @@ namespace PolicyPlus
                                                         case "enum":
                                                             {
                                                                 var enumEntry = new EnumPolicyElement();
-                                                                enumEntry.Required = Conversions.ToBoolean(uiElement.AttributeOrDefault("required", false));
+                                                                enumEntry.Required = Convert.ToBoolean(uiElement.AttributeOrDefault("required", false));
                                                                 enumEntry.Items = new List<EnumPolicyElementItem>();
                                                                 foreach (XmlNode itemElement in uiElement.ChildNodes)
                                                                 {
@@ -383,7 +382,7 @@ namespace PolicyPlus
                 product.DisplayCode = subproductElement.Attributes["displayName"].Value;
 
                 if (parent is not null)
-                    product.Version = Conversions.ToInteger(subproductElement.Attributes["versionIndex"].Value);
+                    product.Version = Convert.ToInt32(subproductElement.Attributes["versionIndex"].Value);
 
                 product.Parent = parent;
                 product.DefinedIn = admx;

@@ -269,12 +269,13 @@ namespace PolicyPlus
         {
             if (e.KeyCode == Keys.C & e.Modifiers == Keys.Control & InfoTreeview.SelectedNode is not null)
             {
-                My.MyProject.Computer.Clipboard.SetText(InfoTreeview.SelectedNode.Text);
+                Clipboard.SetText(InfoTreeview.SelectedNode.Text);
             }
         }
         private void PolicyDetailsButton_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailPolicy.PresentDialog(SelectedPolicy);
+            var detailPolicyForm = Program.GetDetailPolicyForm();
+            detailPolicyForm.PresentDialog(SelectedPolicy);
         }
     }
 }

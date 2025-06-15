@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -31,7 +30,7 @@ namespace PolicyPlus
             string text = StringTextbox.Text;
             if (string.IsNullOrEmpty(text))
             {
-                Interaction.MsgBox("Please enter search terms.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please enter search terms.", "Search", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             bool checkTitle = TitleCheckbox.Checked;
@@ -39,19 +38,19 @@ namespace PolicyPlus
             bool checkComment = CommentCheckbox.Checked;
             if (!(checkTitle | checkDesc | checkComment))
             {
-                Interaction.MsgBox("At least one attribute must be searched. Check one of the boxes and try again.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("At least one attribute must be searched. Check one of the boxes and try again.", "Search", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             Searcher = new Func<PolicyPlusPolicy, bool>((Policy) =>
                 {
-                    string cleanupStr(string RawText) => new string(Strings.Trim(RawText.ToLowerInvariant()).Where(c => !".,'\";/!(){}[]".Contains(Conversions.ToString(c))).ToArray());
+                    string cleanupStr(string RawText) => new string(RawText.Trim().ToLowerInvariant().Where(c => !".,'\";/!(){}[]".Contains(c)).ToArray());
                     // Parse the query string for wildcards or quoted strings
-                    string[] rawSplitted = Strings.Split(text);
+                    string[] rawSplitted = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     var simpleWords = new List<string>();
                     var wildcards = new List<string>();
                     var quotedStrings = new List<string>();
                     string partialQuotedString = "";
-                    for (int n = 0, loopTo = rawSplitted.Length - 1; n <= loopTo; n++)
+                    for (int n = 0; n < rawSplitted.Length; n++)
                     {
                         string curString = rawSplitted[n];
                         if (!string.IsNullOrEmpty(partialQuotedString))
@@ -80,11 +79,26 @@ namespace PolicyPlus
                     bool isStringAHit(string SearchedText)
                     {
                         string cleanText = cleanupStr(SearchedText);
-                        string[] wordsInText = Strings.Split(cleanText);
-                        return simpleWords.All(w => wordsInText.Contains(w)) & wildcards.All(w => wordsInText.Any(wit => LikeOperator.LikeString(wit, w, CompareMethod.Binary))) & quotedStrings.All(w => cleanText.Contains(" " + w + " ") | cleanText.StartsWith(w + " ") | cleanText.EndsWith(" " + w) | (cleanText ?? "") == (w ?? "")); // Plain search terms
-                                                                                                                                                                                                                                                                                                                                             // Wildcards
-                                                                                                                                                                                                                                                                                                                                             // Quoted strings
+                        string[] wordsInText = cleanText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        
+                        // Helper method to replace LikeOperator.LikeString
+                        bool IsLike(string input, string pattern)
+                        {
+                            // Convert wildcard pattern to regex pattern
+                            string regexPattern = "^" + Regex.Escape(pattern)
+                                .Replace("\\*", ".*")
+                                .Replace("\\?", ".") + "$";
+                            return Regex.IsMatch(input, regexPattern);
+                        }
+                        
+                        return simpleWords.All(w => wordsInText.Contains(w)) && 
+                               wildcards.All(w => wordsInText.Any(wit => IsLike(wit, w))) && 
+                               quotedStrings.All(w => cleanText.Contains(" " + w + " ") || 
+                                                    cleanText.StartsWith(w + " ") || 
+                                                    cleanText.EndsWith(" " + w) || 
+                                                    cleanText == w);
                     };
+                    
                     if (checkTitle)
                     {
                         if (isStringAHit(Policy.DisplayName))

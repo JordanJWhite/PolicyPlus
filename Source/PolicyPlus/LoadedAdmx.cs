@@ -28,7 +28,8 @@ namespace PolicyPlus
         }
         private void LsvAdmx_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailAdmx.PresentDialog((AdmxFile)LsvAdmx.SelectedItems[0].Tag, Bundle);
+            var detailAdmxForm = Program.GetDetailAdmxForm();
+            detailAdmxForm.PresentDialog((AdmxFile)LsvAdmx.SelectedItems[0].Tag, Bundle);
         }
         private void LoadedAdmx_SizeChanged(object sender, EventArgs e)
         {

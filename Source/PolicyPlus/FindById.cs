@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -26,12 +25,16 @@ namespace PolicyPlus
         }
         private void FindById_Load(object sender, EventArgs e)
         {
-            CategoryImage = My.MyProject.Forms.Main.PolicyIcons.Images[0];
-            PolicyImage = My.MyProject.Forms.Main.PolicyIcons.Images[4];
-            ProductImage = My.MyProject.Forms.Main.PolicyIcons.Images[10];
-            SupportImage = My.MyProject.Forms.Main.PolicyIcons.Images[11];
-            NotFoundImage = My.MyProject.Forms.Main.PolicyIcons.Images[8];
-            BlankImage = My.MyProject.Forms.Main.PolicyIcons.Images[9];
+            var mainForm = Program.GetMainForm();
+            if (mainForm != null && mainForm.PolicyIcons != null)
+            {
+                CategoryImage = mainForm.PolicyIcons.Images[0];
+                PolicyImage = mainForm.PolicyIcons.Images[4];
+                ProductImage = mainForm.PolicyIcons.Images[10];
+                SupportImage = mainForm.PolicyIcons.Images[11];
+                NotFoundImage = mainForm.PolicyIcons.Images[8];
+                BlankImage = mainForm.PolicyIcons.Images[9];
+            }
         }
         private void IdTextbox_TextChanged(object sender, EventArgs e)
         {
@@ -41,7 +44,7 @@ namespace PolicyPlus
             SelectedCategory = null;
             SelectedProduct = null;
             SelectedSupport = null;
-            string id = Strings.Trim(IdTextbox.Text);
+            string id = IdTextbox.Text.Trim();
             if (AdmxWorkspace.FlatCategories.ContainsKey(id))
             {
                 StatusImage.Image = CategoryImage;
@@ -59,7 +62,7 @@ namespace PolicyPlus
             }
             else // Check for a policy
             {
-                string[] policyAndSection = Strings.Split(id, "@", 2);
+                string[] policyAndSection = id.Split(new char[] {'@'}, 2);
                 string policyId = policyAndSection[0]; // Cut off the section override
                 if (AdmxWorkspace.Policies.ContainsKey(policyId))
                 {

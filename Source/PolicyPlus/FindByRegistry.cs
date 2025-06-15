@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -25,29 +24,40 @@ namespace PolicyPlus
             string valName = ValueTextbox.Text.ToLowerInvariant();
             if (string.IsNullOrEmpty(keyName) & string.IsNullOrEmpty(valName))
             {
-                Interaction.MsgBox("Please enter search terms.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please enter search terms.", "Search", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             if (new[] { @"HKLM\", @"HKCU\", @"HKEY_LOCAL_MACHINE\", @"HKEY_CURRENT_USER\" }.Any(bad => keyName.StartsWith(bad, StringComparison.InvariantCultureIgnoreCase)))
             {
-                Interaction.MsgBox("Policies' root keys are determined only by their section. Remove the root key from the search terms and try again.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Policies' root keys are determined only by their section. Remove the root key from the search terms and try again.", "Search", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             Searcher = new Func<PolicyPlusPolicy, bool>((Policy) =>
                 {
                     var affected = PolicyProcessing.GetReferencedRegistryValues(Policy);
+                    
+                    // Helper method to replace LikeOperator.LikeString
+                    bool IsLike(string input, string pattern)
+                    {
+                        // Convert wildcard pattern to regex pattern
+                        string regexPattern = "^" + Regex.Escape(pattern)
+                            .Replace("\\*", ".*")
+                            .Replace("\\?", ".") + "$";
+                        return Regex.IsMatch(input, regexPattern);
+                    }
+                    
                     foreach (var rkvp in affected)
                     {
                         if (!string.IsNullOrEmpty(valName))
                         {
-                            if (!LikeOperator.LikeString(rkvp.Value.ToLowerInvariant(), valName, CompareMethod.Binary))
+                            if (!IsLike(rkvp.Value.ToLowerInvariant(), valName))
                                 continue;
                         }
                         if (!string.IsNullOrEmpty(keyName))
                         {
                             if (keyName.Contains("*") | keyName.Contains("?")) // Wildcard path
                             {
-                                if (!LikeOperator.LikeString(rkvp.Key.ToLowerInvariant(), keyName, CompareMethod.Binary))
+                                if (!IsLike(rkvp.Key.ToLowerInvariant(), keyName))
                                     continue;
                             }
                             else if (keyName.Contains(@"\")) // Path root
@@ -55,7 +65,7 @@ namespace PolicyPlus
                                 if (!rkvp.Key.StartsWith(keyName, StringComparison.InvariantCultureIgnoreCase))
                                     continue;
                             }
-                            else if (!Strings.Split(rkvp.Key, @"\").Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase))) // One path component
+                            else if (!rkvp.Key.Split('\\').Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase))) // One path component
                                 continue;
                         }
                         return true;

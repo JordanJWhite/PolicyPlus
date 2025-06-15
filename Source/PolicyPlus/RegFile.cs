@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
+// Removed Microsoft.VisualBasic and Microsoft.VisualBasic.CompilerServices
 using Microsoft.Win32;
 
 namespace PolicyPlus
@@ -20,7 +19,7 @@ namespace PolicyPlus
         {
             // Escape quotes and slashes for a value name or string data
             var sb = new System.Text.StringBuilder();
-            for (int n = 0, loopTo = Text.Length - 1; n <= loopTo; n++)
+            for (int n = 0; n < Text.Length; n++)
             {
                 char character = Text[n];
                 if (character == '"' | character == '\\')
@@ -34,7 +33,7 @@ namespace PolicyPlus
             // The reverse of EscapeValue
             var sb = new System.Text.StringBuilder();
             bool escaping = false;
-            for (int n = 0, loopTo = Text.Length - 1; n <= loopTo; n++)
+            for (int n = 0; n < Text.Length; n++)
             {
                 if (escaping)
                 {
@@ -58,10 +57,10 @@ namespace PolicyPlus
             {
                 if (Reader.EndOfStream)
                     return null;
-                if (StopAt.HasValue && Reader.Peek() == Strings.Asc(StopAt.Value))
+                if (StopAt.HasValue && Reader.Peek() == StopAt.Value)
                     return null;
                 string line = Reader.ReadLine();
-                if (string.IsNullOrWhiteSpace(line) || Strings.Trim(line).StartsWith(";"))
+                if (string.IsNullOrWhiteSpace(line) || line.Trim().StartsWith(";"))
                     continue;
                 return line;
             }
@@ -101,7 +100,7 @@ namespace PolicyPlus
                         }
                         else
                         {
-                            string[] parts = Strings.Split(valueLine, "\"=", 2);
+                            string[] parts = valueLine.Split(new[] { "\"=" }, 2, StringSplitOptions.None);
                             valueName = UnescapeValue(parts[0].Substring(1));
                             data = parts[1];
                         }
@@ -137,7 +136,7 @@ namespace PolicyPlus
                             var allDehexedBytes = new List<byte>();
                             do // Read all the hex lines
                             {
-                                var hexBytes = Strings.Split(Strings.Trim(curHexLine).TrimEnd('\\', ','), ",").Where(s => !string.IsNullOrEmpty(s));
+                                var hexBytes = curHexLine.Trim().TrimEnd('\\', ',').Split(',').Where(s => !string.IsNullOrEmpty(s));
                                 foreach (var b in hexBytes)
                                     allDehexedBytes.Add(byte.Parse(b, System.Globalization.NumberStyles.HexNumber));
                                 if (curHexLine.EndsWith(@"\"))
@@ -208,14 +207,14 @@ namespace PolicyPlus
                                 case RegistryValueKind.String:
                                     {
                                         Writer.Write("\"");
-                                        Writer.Write(EscapeValue(Conversions.ToString(value.Data)));
+                                        Writer.Write(EscapeValue(Convert.ToString(value.Data)));
                                         Writer.WriteLine("\"");
                                         break;
                                     }
                                 case RegistryValueKind.DWord:
                                     {
                                         Writer.Write("dword:");
-                                        Writer.WriteLine(Convert.ToString(Conversions.ToUInteger(value.Data), 16).PadLeft(8, '0'));
+                                        Writer.WriteLine(Convert.ToString(Convert.ToUInt32(value.Data), 16).PadLeft(8, '0'));
                                         break;
                                     }
 
@@ -233,7 +232,7 @@ namespace PolicyPlus
                                         Writer.Write(":");
                                         posInRow += 1;
                                         byte[] bytes = PolFile.ObjectToBytes(value.Data, value.Kind);
-                                        for (int n = 0, loopTo = bytes.Length - 2; n <= loopTo; n++)
+                                        for (int n = 0; n < bytes.Length - 1; n++)
                                         {
                                             Writer.Write(Convert.ToString(bytes[n], 16).PadLeft(2, '0'));
                                             Writer.Write(",");
@@ -422,7 +421,7 @@ namespace PolicyPlus
             else
             {
                 // Other hives should be just fine
-                int firstSlashPos = firstKeyName.IndexOf(@"\");
+                int firstSlashPos = firstKeyName.IndexOf(@"\\");
                 return firstKeyName.Substring(0, firstSlashPos + 1);
             }
         }

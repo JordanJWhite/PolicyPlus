@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -27,7 +26,7 @@ namespace PolicyPlus
             {
                 if (string.IsNullOrEmpty(TextValueName.Text))
                 {
-                    Interaction.MsgBox("You must enter a value name.", MsgBoxStyle.Exclamation);
+                    MessageBox.Show("You must enter a value name.", "Missing Value Name", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     return;
                 }
                 DialogResult = DialogResult.OK;

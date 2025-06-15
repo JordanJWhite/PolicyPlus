@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Win32;
 
 namespace PolicyPlus
@@ -87,7 +85,7 @@ namespace PolicyPlus
                         }
                         else if (data is string)
                         {
-                            text = Conversions.ToString(data);
+                            text = data.ToString();
                             iconIndex = kind == RegistryValueKind.ExpandString ? 42 : 40; // One page with arrow, or without
                         }
                         else if (data is uint)
@@ -136,7 +134,7 @@ namespace PolicyPlus
         }
         public void SelectKey(string KeyPath)
         {
-            var lsvi = LsvPol.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag is string && KeyPath.Equals(Conversions.ToString(i.Tag), StringComparison.InvariantCultureIgnoreCase));
+            var lsvi = LsvPol.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag is string && KeyPath.Equals(i.Tag.ToString(), StringComparison.InvariantCultureIgnoreCase));
             if (lsvi is null)
                 return;
             lsvi.Selected = true;
@@ -166,22 +164,23 @@ namespace PolicyPlus
         }
         private void ButtonAddKey_Click(object sender, EventArgs e)
         {
-            string keyName = My.MyProject.Forms.EditPolKey.PresentDialog("");
+            var editPolKeyForm = new EditPolKey();
+            string keyName = editPolKeyForm.PresentDialog("");
             if (string.IsNullOrEmpty(keyName))
                 return;
             if (!IsKeyNameValid(keyName))
             {
-                Interaction.MsgBox("The key name is not valid.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("The key name is not valid.", "Invalid Key Name", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
-            string containerKey = Conversions.ToString(LsvPol.SelectedItems.Count > 0 ? LsvPol.SelectedItems[0].Tag : "");
+            string containerKey = LsvPol.SelectedItems.Count > 0 ? LsvPol.SelectedItems[0].Tag as string : "";
             if (!IsKeyNameAvailable(containerKey, keyName))
             {
-                Interaction.MsgBox("The key name is already taken.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("The key name is already taken.", "Key Name Exists", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             string newPath = string.IsNullOrEmpty(containerKey) ? keyName : containerKey + @"\" + keyName;
-            EditingPol.SetValue(newPath, "", Array.CreateInstance(typeof(byte), 0), RegistryValueKind.None);
+            EditingPol.SetValue(newPath, "", Array.Empty<byte>(), RegistryValueKind.None);
             UpdateTree();
             SelectKey(newPath);
         }
@@ -189,9 +188,10 @@ namespace PolicyPlus
         {
             if (Kind == RegistryValueKind.String | Kind == RegistryValueKind.ExpandString)
             {
-                if (My.MyProject.Forms.EditPolStringData.PresentDialog(ValueName, Conversions.ToString(CurrentData)) == DialogResult.OK)
+                var editPolStringDataForm = new EditPolStringData();
+                if (editPolStringDataForm.PresentDialog(ValueName, CurrentData?.ToString()) == DialogResult.OK)
                 {
-                    return My.MyProject.Forms.EditPolStringData.TextData.Text;
+                    return editPolStringDataForm.TextData.Text;
                 }
                 else
                 {
@@ -200,9 +200,10 @@ namespace PolicyPlus
             }
             else if (Kind == RegistryValueKind.DWord | Kind == RegistryValueKind.QWord)
             {
-                if (My.MyProject.Forms.EditPolNumericData.PresentDialog(ValueName, Conversions.ToULong(CurrentData), Kind == RegistryValueKind.QWord) == DialogResult.OK)
+                var editPolNumericDataForm = new EditPolNumericData();
+                if (editPolNumericDataForm.PresentDialog(ValueName, Convert.ToUInt64(CurrentData), Kind == RegistryValueKind.QWord) == DialogResult.OK)
                 {
-                    return My.MyProject.Forms.EditPolNumericData.NumData.Value;
+                    return editPolNumericDataForm.NumData.Value;
                 }
                 else
                 {
@@ -211,9 +212,10 @@ namespace PolicyPlus
             }
             else if (Kind == RegistryValueKind.MultiString)
             {
-                if (My.MyProject.Forms.EditPolMultiStringData.PresentDialog(ValueName, (string[])CurrentData) == DialogResult.OK)
+                var editPolMultiStringDataForm = new EditPolMultiStringData();
+                if (editPolMultiStringDataForm.PresentDialog(ValueName, (string[])CurrentData) == DialogResult.OK)
                 {
-                    return My.MyProject.Forms.EditPolMultiStringData.TextData.Lines;
+                    return editPolMultiStringDataForm.TextData.Lines;
                 }
                 else
                 {
@@ -222,17 +224,18 @@ namespace PolicyPlus
             }
             else
             {
-                Interaction.MsgBox("This value kind is not supported.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("This value kind is not supported.", "Unsupported Value Kind", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return null;
             }
         }
         private void ButtonAddValue_Click(object sender, EventArgs e)
         {
-            string keyPath = Conversions.ToString(LsvPol.SelectedItems[0].Tag);
-            if (My.MyProject.Forms.EditPolValue.PresentDialog() != DialogResult.OK)
+            string keyPath = LsvPol.SelectedItems[0].Tag.ToString();
+            var editPolValueForm = new EditPolValue();
+            if (editPolValueForm.PresentDialog() != DialogResult.OK)
                 return;
-            string value = My.MyProject.Forms.EditPolValue.ChosenName;
-            var kind = My.MyProject.Forms.EditPolValue.SelectedKind;
+            string value = editPolValueForm.ChosenName;
+            var kind = editPolValueForm.SelectedKind;
             object defaultData;
             if (kind == RegistryValueKind.String | kind == RegistryValueKind.ExpandString)
             {
@@ -259,16 +262,17 @@ namespace PolicyPlus
             var tag = LsvPol.SelectedItems[0].Tag;
             if (tag is string)
             {
-                if (My.MyProject.Forms.EditPolDelete.PresentDialog(Strings.Split(Conversions.ToString(tag), @"\").Last()) != DialogResult.OK)
+                var editPolDeleteForm = new EditPolDelete();
+                if (editPolDeleteForm.PresentDialog(tag.ToString().Split('\\').Last()) != DialogResult.OK)
                     return;
-                if (My.MyProject.Forms.EditPolDelete.OptPurge.Checked)
+                if (editPolDeleteForm.OptPurge.Checked)
                 {
-                    EditingPol.ClearKey(Conversions.ToString(tag)); // Delete everything
+                    EditingPol.ClearKey(tag.ToString()); // Delete everything
                 }
-                else if (My.MyProject.Forms.EditPolDelete.OptClearFirst.Checked)
+                else if (editPolDeleteForm.OptClearFirst.Checked)
                 {
-                    EditingPol.ForgetKeyClearance(Conversions.ToString(tag)); // So the clearance is before the values in the POL
-                    EditingPol.ClearKey(Conversions.ToString(tag));
+                    EditingPol.ForgetKeyClearance(tag.ToString()); // So the clearance is before the values in the POL
+                    EditingPol.ClearKey(tag.ToString());
                     // Add the existing values back
                     int index = LsvPol.SelectedIndices[0] + 1;
                     do
@@ -291,10 +295,10 @@ namespace PolicyPlus
                 else
                 {
                     // Delete only the specified value
-                    EditingPol.DeleteValue(Conversions.ToString(tag), My.MyProject.Forms.EditPolDelete.TextValueName.Text);
+                    EditingPol.DeleteValue(tag.ToString(), editPolDeleteForm.TextValueName.Text);
                 }
                 UpdateTree();
-                SelectKey(Conversions.ToString(tag));
+                SelectKey(tag.ToString());
             }
             else
             {
@@ -310,21 +314,21 @@ namespace PolicyPlus
             var tag = LsvPol.SelectedItems[0].Tag;
             if (tag is string)
             {
-                if (Interaction.MsgBox("Are you sure you want to remove this key and all its contents?", MsgBoxStyle.Exclamation | MsgBoxStyle.YesNo) == MsgBoxResult.No)
+                var result = MessageBox.Show("Are you sure you want to remove this key and all its contents?", "Remove Key", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                if (result == DialogResult.No)
                     return;
-                string keyPath = Conversions.ToString(tag);
-                if (keyPath.Contains(@"\"))
+                string keyPath = tag as string;
+                if (keyPath.Contains("\\"))
                     containerKey = keyPath.Remove(keyPath.LastIndexOf('\\'));
-                
                 // Use local function instead of lambda for recursive calls
-                void RemoveKey(string Key)
+                Action<string> RemoveKey = null;
+                RemoveKey = (Key) =>
                 {
                     foreach (var subkey in EditingPol.GetKeyNames(Key))
-                        RemoveKey(Key + @"\" + subkey);
+                        RemoveKey(Key + "\\" + subkey);
                     EditingPol.ClearKey(Key);
                     EditingPol.ForgetKeyClearance(Key);
-                }
-                
+                };
                 RemoveKey(keyPath);
             }
             else
@@ -336,9 +340,9 @@ namespace PolicyPlus
             UpdateTree();
             if (!string.IsNullOrEmpty(containerKey))
             {
-                string[] pathParts = Strings.Split(containerKey, @"\");
-                for (int n = 1, loopTo = pathParts.Length; n <= loopTo; n++)
-                    SelectKey(string.Join(@"\", pathParts.Take(n)));
+                string[] pathParts = containerKey.Split(new[] { '\\' }, StringSplitOptions.None);
+                for (int n = 1; n <= pathParts.Length; n++)
+                    SelectKey(string.Join("\\", pathParts.Take(n)));
             }
             else
             {
@@ -393,15 +397,17 @@ namespace PolicyPlus
         }
         private void ButtonImport_Click(object sender, EventArgs e)
         {
-            if (My.MyProject.Forms.ImportReg.PresentDialog(EditingPol) == DialogResult.OK)
+            var importRegForm = new ImportReg();
+            if (importRegForm.PresentDialog(EditingPol) == DialogResult.OK)
                 UpdateTree();
         }
         private void ButtonExport_Click(object sender, EventArgs e)
         {
             string branch = "";
             if (LsvPol.SelectedItems.Count > 0)
-                branch = Conversions.ToString(LsvPol.SelectedItems[0].Tag);
-            My.MyProject.Forms.ExportReg.PresentDialog(branch, EditingPol, EditingUserSource);
+                branch = LsvPol.SelectedItems[0].Tag.ToString();
+            var exportRegForm = new ExportReg();
+            exportRegForm.PresentDialog(branch, EditingPol, EditingUserSource);
         }
         private class PolValueInfo
         {

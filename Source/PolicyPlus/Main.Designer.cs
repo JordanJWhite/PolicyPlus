@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace PolicyPlus
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
+    
     public partial class Main : Form
     {
 

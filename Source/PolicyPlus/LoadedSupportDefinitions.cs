@@ -36,7 +36,8 @@ namespace PolicyPlus
         }
         private void LsvSupport_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailSupport.PresentDialog((PolicyPlusSupport)LsvSupport.SelectedItems[0].Tag);
+            var detailSupportForm = new DetailSupport();
+            detailSupportForm.PresentDialog((PolicyPlusSupport)LsvSupport.SelectedItems[0].Tag);
         }
         private void TextFilter_TextChanged(object sender, EventArgs e)
         {

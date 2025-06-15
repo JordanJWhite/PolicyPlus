@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -282,7 +281,7 @@ namespace PolicyPlus
             // Get a fully qualified name from a code and the current scope
             if (Ref.Contains(":"))
             {
-                string[] parts = Strings.Split(Ref, ":", 2);
+                string[] parts = Ref.Split(new char[] {':'}, 2);
                 if (Admx.Prefixes.ContainsKey(parts[0]))
                 {
                     string srcNamespace = Admx.Prefixes[parts[0]];

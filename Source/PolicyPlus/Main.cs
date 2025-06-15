@@ -6,8 +6,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Win32;
 
 namespace PolicyPlus
@@ -28,64 +26,77 @@ namespace PolicyPlus
         private AdmxPolicySection ViewPolicyTypes = AdmxPolicySection.Both;
         private bool ViewFilteredOnly = false;
         private bool PoliciesChanged = false;
+        private FindResults findResultsDialog; // Added for FindResults instance
 
         public Main()
         {
             InitializeComponent();
         }
+
+        // Helper method to get or create the FindResults dialog instance
+        private FindResults GetFindResultsDialog()
+        {
+            if (findResultsDialog == null || findResultsDialog.IsDisposed)
+            {
+                findResultsDialog = new FindResults();
+            }
+            return findResultsDialog;
+        }
+
         private void Main_Load(object sender, EventArgs e)
         {
             // Create the configuration manager (for the Registry)
             Configuration = new ConfigurationStorage(RegistryHive.CurrentUser, @"Software\Policy Plus");
             // Restore the last ADMX source and policy loaders
             OpenLastAdmxSource();
-            PolicyLoaderSource compLoaderType = (PolicyLoaderSource)Conversions.ToInteger(Configuration.GetValue("CompSourceType", 0));
+            PolicyLoaderSource compLoaderType = (PolicyLoaderSource)Convert.ToInt32(Configuration.GetValue("CompSourceType", 0));
             var compLoaderData = Configuration.GetValue("CompSourceData", "");
-            PolicyLoaderSource userLoaderType = (PolicyLoaderSource)Conversions.ToInteger(Configuration.GetValue("UserSourceType", 0));
+            PolicyLoaderSource userLoaderType = (PolicyLoaderSource)Convert.ToInt32(Configuration.GetValue("UserSourceType", 0));
             var userLoaderData = Configuration.GetValue("UserSourceData", "");
             try
             {
-                OpenPolicyLoaders(new PolicyLoader(userLoaderType, Conversions.ToString(userLoaderData), true), new PolicyLoader(compLoaderType, Conversions.ToString(compLoaderData), false), true);
+                OpenPolicyLoaders(new PolicyLoader(userLoaderType, Convert.ToString(userLoaderData), true), new PolicyLoader(compLoaderType, Convert.ToString(compLoaderData), false), true);
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("The previous policy sources are not accessible. The defaults will be loaded.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("The previous policy sources are not accessible. The defaults will be loaded.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 Configuration.SetValue("CompSourceType", (int)PolicyLoaderSource.LocalGpo);
                 Configuration.SetValue("UserSourceType", (int)PolicyLoaderSource.LocalGpo);
                 OpenPolicyLoaders(new PolicyLoader(PolicyLoaderSource.LocalGpo, "", true), new PolicyLoader(PolicyLoaderSource.LocalGpo, "", false), true);
             }
-            My.MyProject.Forms.OpenPol.SetLastSources(compLoaderType, Conversions.ToString(compLoaderData), userLoaderType, Conversions.ToString(userLoaderData));
             // Set up the UI
-            ComboAppliesTo.Text = Conversions.ToString(ComboAppliesTo.Items[0]);
+            ComboAppliesTo.Text = Convert.ToString(ComboAppliesTo.Items[0]);
             CategoriesTree.Height -= InfoStrip.ClientSize.Height;
             SettingInfoPanel.Height -= InfoStrip.ClientSize.Height;
             PoliciesList.Height -= InfoStrip.ClientSize.Height;
             InfoStrip.Items.Insert(2, new ToolStripSeparator());
             PopulateAdmxUi();
         }
+
         private void Main_Shown(object sender, EventArgs e)
         {
             // Check whether ADMX files probably need to be downloaded
-            if (Conversions.ToInteger(Configuration.GetValue("CheckedPolicyDefinitions", 0)) == 0)
+            if (Convert.ToInt32(Configuration.GetValue("CheckedPolicyDefinitions", 0)) == 0)
             {
                 Configuration.SetValue("CheckedPolicyDefinitions", 1);
                 if (!SystemInfo.HasGroupPolicyInfrastructure() && AdmxWorkspace.Categories.Values.Where(c => IsOrphanCategory(c) & !IsEmptyCategory(c)).Count() > 2)
                 {
-                    if (Interaction.MsgBox($"Welcome to Policy Plus!{Constants.vbCrLf}{Constants.vbCrLf}Home editions do not come with the full set of policy definitions. Would you like to download them now? " + "This can also be done later with Help | Acquire ADMX Files.", MsgBoxStyle.Information | MsgBoxStyle.YesNo) == MsgBoxResult.Yes)
+                    if (MessageBox.Show($"Welcome to Policy Plus!{Environment.NewLine}{Environment.NewLine}Home editions do not come with the full set of policy definitions. Would you like to download them now? " + "This can also be done later with Help | Acquire ADMX Files.", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                     {
                         AcquireADMXFilesToolStripMenuItem_Click(null, null);
                     }
                 }
             }
         }
+
         public void OpenLastAdmxSource()
         {
             string defaultAdmxSource = Environment.ExpandEnvironmentVariables(@"%windir%\PolicyDefinitions");
-            string admxSource = Conversions.ToString(Configuration.GetValue("AdmxSource", defaultAdmxSource));
+            string admxSource = Convert.ToString(Configuration.GetValue("AdmxSource", defaultAdmxSource));
             try
             {
                 var fails = AdmxWorkspace.LoadFolder(admxSource, GetPreferredLanguageCode());
-                if (DisplayAdmxLoadErrorReport(fails, true) == MsgBoxResult.No)
+                if (DisplayAdmxLoadErrorReport(fails, true) == DialogResult.No)
                     throw new Exception("You decided to not use the problematic ADMX bundle.");
             }
             catch (Exception ex)
@@ -94,7 +105,7 @@ namespace PolicyPlus
                 string loadFailReason = "";
                 if ((admxSource ?? "") != (defaultAdmxSource ?? ""))
                 {
-                    if (Interaction.MsgBox("Policy definitions could not be loaded from \"" + admxSource + "\": " + ex.Message + Constants.vbCrLf + Constants.vbCrLf + "Load from the default location?", MsgBoxStyle.YesNo | MsgBoxStyle.Question) == MsgBoxResult.Yes)
+                    if (MessageBox.Show("Policy definitions could not be loaded from \"" + admxSource + "\": " + ex.Message + Environment.NewLine + Environment.NewLine + "Load from the default location?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                     {
                         try
                         {
@@ -113,16 +124,27 @@ namespace PolicyPlus
                     loadFailReason = ex.Message;
                 }
                 if (!string.IsNullOrEmpty(loadFailReason))
-                    Interaction.MsgBox("Policy definitions could not be loaded: " + loadFailReason, MsgBoxStyle.Exclamation);
+                    MessageBox.Show("Policy definitions could not be loaded: " + loadFailReason, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
+
         public void PopulateAdmxUi()
         {
             // Populate the left categories tree
             CategoriesTree.Nodes.Clear();
             CategoryNodes.Clear();
             Action<IEnumerable<PolicyPlusCategory>, TreeNodeCollection> addCategory = null; // Initialize the variable
-            addCategory = new Action<IEnumerable<PolicyPlusCategory>, TreeNodeCollection>((CategoryList, ParentNode) => { foreach (var category in CategoryList.Where(ShouldShowCategory)) { var newNode = ParentNode.Add(category.UniqueID, category.DisplayName, GetImageIndexForCategory(category)); newNode.SelectedImageIndex = 3; newNode.Tag = category; CategoryNodes.Add(category, newNode); addCategory(category.Children, newNode.Nodes); } }); // "Go" arrow
+            addCategory = new Action<IEnumerable<PolicyPlusCategory>, TreeNodeCollection>((CategoryList, ParentNode) =>
+            {
+                foreach (var category in CategoryList.Where(ShouldShowCategory))
+                {
+                    var newNode = ParentNode.Add(category.UniqueID, category.DisplayName, GetImageIndexForCategory(category));
+                    newNode.SelectedImageIndex = 3;
+                    newNode.Tag = category;
+                    CategoryNodes.Add(category, newNode);
+                    addCategory(category.Children, newNode.Nodes);
+                }
+            }); // "Go" arrow
             addCategory(AdmxWorkspace.Categories.Values, CategoriesTree.Nodes);
             CategoriesTree.Sort();
             CurrentCategory = null;
@@ -130,6 +152,7 @@ namespace PolicyPlus
             ClearSelections();
             UpdatePolicyInfo();
         }
+
         public void UpdateCategoryListing()
         {
             // Update the right pane to include the current category's children
@@ -180,6 +203,7 @@ namespace PolicyPlus
                 }
             }
         }
+
         public void UpdatePolicyInfo()
         {
             // Update the middle pane with the selected object's information
@@ -195,7 +219,7 @@ namespace PolicyPlus
                 }
                 else
                 {
-                    PolicySupportedLabel.Text = "Requirements:" + Constants.vbCrLf + CurrentSetting.SupportedOn.DisplayName;
+                    PolicySupportedLabel.Text = "Requirements:" + Environment.NewLine + CurrentSetting.SupportedOn.DisplayName;
                 }
                 PolicyDescLabel.Text = PrettifyDescription(CurrentSetting.DisplayExplanation);
                 PolicyIsPrefTable.Visible = IsPreference(CurrentSetting);
@@ -215,14 +239,17 @@ namespace PolicyPlus
             }
             SettingInfoPanel_ClientSizeChanged(null, null);
         }
+
         public bool IsOrphanCategory(PolicyPlusCategory Category)
         {
             return Category.Parent is null & !string.IsNullOrEmpty(Category.RawCategory.ParentID);
         }
+
         public bool IsEmptyCategory(PolicyPlusCategory Category)
         {
             return Category.Children.Count == 0 & Category.Policies.Count == 0;
         }
+
         public int GetImageIndexForCategory(PolicyPlusCategory Category)
         {
             if (IsOrphanCategory(Category))
@@ -238,6 +265,7 @@ namespace PolicyPlus
                 return 0;
             } // Normal
         }
+
         public int GetImageIndexForSetting(PolicyPlusPolicy Setting)
         {
             if (IsPreference(Setting))
@@ -253,6 +281,7 @@ namespace PolicyPlus
                 return 5;
             } // Extra configuration
         }
+
         public bool ShouldShowCategory(PolicyPlusCategory Category)
         {
             // Should this category be shown considering the current filter?
@@ -265,6 +294,7 @@ namespace PolicyPlus
                 return Category.Policies.Any(ShouldShowPolicy) || Category.Children.Any(ShouldShowCategory);
             }
         }
+
         public bool ShouldShowPolicy(PolicyPlusPolicy Policy)
         {
             // Should this policy be shown considering the current filter and active sections?
@@ -288,6 +318,7 @@ namespace PolicyPlus
             }
             return true;
         }
+
         public void MoveToVisibleCategoryAndReload()
         {
             // Move up in the categories tree until a visible one is found
@@ -306,6 +337,7 @@ namespace PolicyPlus
             CurrentSetting = newFocusPolicy;
             UpdatePolicyInfo();
         }
+
         public string GetPolicyState(PolicyPlusPolicy Policy)
         {
             // Get a human-readable string describing the status of a policy, considering all active sections
@@ -343,6 +375,7 @@ namespace PolicyPlus
                 return GetPolicyState(Policy, ViewPolicyTypes);
             }
         }
+
         public string GetPolicyState(PolicyPlusPolicy Policy, AdmxPolicySection Section)
         {
             // Get the human-readable status of a policy considering only one section
@@ -367,6 +400,7 @@ namespace PolicyPlus
                     }
             }
         }
+
         public string GetPolicyCommentText(PolicyPlusPolicy Policy)
         {
             // Get the comment text to show in the Comment column, considering all active sections
@@ -396,6 +430,7 @@ namespace PolicyPlus
                 return GetPolicyComment(Policy, ViewPolicyTypes);
             }
         }
+
         public string GetPolicyComment(PolicyPlusPolicy Policy, AdmxPolicySection Section)
         {
             // Get a policy's comment in one section
@@ -409,28 +444,34 @@ namespace PolicyPlus
             else
                 return "";
         }
+
         public bool IsPreference(PolicyPlusPolicy Policy)
         {
             return !string.IsNullOrEmpty(Policy.RawPolicy.RegistryKey) & !RegistryPolicyProxy.IsPolicyKey(Policy.RawPolicy.RegistryKey);
         }
+
         public void ShowSettingEditor(PolicyPlusPolicy Policy, AdmxPolicySection Section)
         {
-            // Show the Edit Policy Setting dialog for a policy and reload if changes were made
-            if (My.MyProject.Forms.EditSetting.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments) == DialogResult.OK)
+            using (var editSettingForm = new EditSetting())
             {
-                PoliciesChanged = true;
-                // Keep the selection where it is if possible
-                if (CurrentCategory is null || ShouldShowCategory(CurrentCategory))
-                    UpdateCategoryListing();
-                else
-                    MoveToVisibleCategoryAndReload();
+                if (editSettingForm.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments) == DialogResult.OK)
+                {
+                    PoliciesChanged = true;
+                    // Keep the selection where it is if possible
+                    if (CurrentCategory is null || ShouldShowCategory(CurrentCategory))
+                        UpdateCategoryListing();
+                    else
+                        MoveToVisibleCategoryAndReload();
+                }
             }
         }
+
         public void ClearSelections()
         {
             CurrentSetting = null;
             HighlightCategory = null;
         }
+
         public void OpenPolicyLoaders(PolicyLoader User, PolicyLoader Computer, bool Quiet)
         {
             // Create policy sources from the given loaders
@@ -441,7 +482,26 @@ namespace PolicyPlus
             CompPolicyLoader = Computer;
             CompPolicySource = Computer.OpenSource();
             bool allOk = true;
-            string policyStatus(PolicyLoader Loader) { switch (Loader.GetWritability()) { case PolicySourceWritability.Writable: { return "is fully writable"; } case PolicySourceWritability.NoCommit: { allOk = false; return "cannot be saved"; } default: { allOk = false; return "cannot be modified"; } } }; // No writing
+            string policyStatus(PolicyLoader Loader)
+            {
+                switch (Loader.GetWritability())
+                {
+                    case PolicySourceWritability.Writable:
+                        {
+                            return "is fully writable";
+                        }
+                    case PolicySourceWritability.NoCommit:
+                        {
+                            allOk = false;
+                            return "cannot be saved";
+                        }
+                    default:
+                        {
+                            allOk = false;
+                            return "cannot be modified";
+                        }
+                }
+            }; // No writing
             Dictionary<string, string> loadComments(PolicyLoader Loader)
             {
                 string cmtxPath = Loader.GetCmtxPath();
@@ -479,15 +539,16 @@ namespace PolicyPlus
             {
                 if (!Quiet)
                 {
-                    Interaction.MsgBox("Both the user and computer policy sources are loaded and writable.", MsgBoxStyle.Information);
+                    MessageBox.Show("Both the user and computer policy sources are loaded and writable.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             else
             {
-                string msgText = "Not all policy sources are fully writable." + Constants.vbCrLf + Constants.vbCrLf + "The user source " + userStatus + "." + Constants.vbCrLf + Constants.vbCrLf + "The computer source " + compStatus + ".";
-                Interaction.MsgBox(msgText, MsgBoxStyle.Exclamation);
+                string msgText = "Not all policy sources are fully writable." + Environment.NewLine + Environment.NewLine + "The user source " + userStatus + "." + Environment.NewLine + Environment.NewLine + "The computer source " + compStatus + ".";
+                MessageBox.Show(msgText, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
+
         public void ClosePolicySources()
         {
             // Clean up the policy sources
@@ -504,7 +565,7 @@ namespace PolicyPlus
             }
             if (!allOk)
             {
-                Interaction.MsgBox("Cleanup did not complete fully because the loaded resources are open in other programs.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Cleanup did not complete fully because the loaded resources are open in other programs.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -522,35 +583,43 @@ namespace PolicyPlus
             PoliciesChanged = false;
             return true;
         }
+
         public void ShowSearchDialog(Func<PolicyPlusPolicy, bool> Searcher)
         {
-            // Show the search dialog and make it start a search if appropriate
             DialogResult result;
+            PolicyPlusPolicy selPol = null;
+
+            var currentFindResultsDialog = GetFindResultsDialog(); // Use the instance
             if (Searcher is null)
             {
-                result = My.MyProject.Forms.FindResults.PresentDialog();
+                result = currentFindResultsDialog.PresentDialog();
             }
             else
             {
-                result = My.MyProject.Forms.FindResults.PresentDialogStartSearch(AdmxWorkspace, Searcher);
+                result = currentFindResultsDialog.PresentDialogStartSearch(AdmxWorkspace, Searcher);
             }
             if (result == DialogResult.OK)
             {
-                var selPol = My.MyProject.Forms.FindResults.SelectedPolicy;
+                selPol = currentFindResultsDialog.SelectedPolicy;
+            }
+
+            if (selPol != null)
+            {
                 ShowSettingEditor(selPol, ViewPolicyTypes);
                 FocusPolicy(selPol);
             }
         }
+
         public void ClearAdmxWorkspace()
         {
-            // Clear out all the per-workspace bookkeeping
             AdmxWorkspace = new AdmxBundle();
-            My.MyProject.Forms.FindResults.ClearSearch();
+            GetFindResultsDialog().ClearSearch(); // Use the instance
         }
+
         public void FocusPolicy(PolicyPlusPolicy Policy)
         {
             // Try to automatically select a policy in the list view
-            if (CategoryNodes.ContainsKey(Policy.Category))
+            if (Policy.Category != null && CategoryNodes.ContainsKey(Policy.Category)) // Added null check for Policy.Category
             {
                 CurrentCategory = Policy.Category;
                 UpdateCategoryListing();
@@ -566,6 +635,7 @@ namespace PolicyPlus
                 }
             }
         }
+
         public bool IsPolicyVisibleAfterFilter(PolicyPlusPolicy Policy, bool IsUser)
         {
             // Calculate whether a policy is visible with the current filter
@@ -618,11 +688,13 @@ namespace PolicyPlus
             }
             return true;
         }
+
         public bool PolicyVisibleInSection(PolicyPlusPolicy Policy, AdmxPolicySection Section)
         {
             // Does this policy apply to the given section?
             return (int)(Policy.RawPolicy.Section & Section) > 0;
         }
+
         public PolFile GetOrCreatePolFromPolicySource(IPolicySource Source)
         {
             if (Source is PolFile)
@@ -637,25 +709,25 @@ namespace PolicyPlus
                 var pol = new PolFile();
                 Action<string, RegistryKey> addSubtree = null; // Initialize the variable
                 addSubtree = new Action<string, RegistryKey>((PathRoot, Key) =>
+                {
+                    foreach (var valName in Key.GetValueNames())
                     {
-                        foreach (var valName in Key.GetValueNames())
+                        var valData = Key.GetValue(valName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                        pol.SetValue(PathRoot, valName, valData, Key.GetValueKind(valName));
+                    }
+                    foreach (var subkeyName in Key.GetSubKeyNames())
+                    {
+                        using (var subkey = Key.OpenSubKey(subkeyName, false))
                         {
-                            var valData = Key.GetValue(valName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                            pol.SetValue(PathRoot, valName, valData, Key.GetValueKind(valName));
+                            addSubtree(PathRoot + @"\" + subkeyName, subkey);
                         }
-                        foreach (var subkeyName in Key.GetSubKeyNames())
-                        {
-                            using (var subkey = Key.OpenSubKey(subkeyName, false))
-                            {
-                                addSubtree(PathRoot + @"\" + subkeyName, subkey);
-                            }
-                        }
-                    });
+                    }
+                });
                 foreach (var policyPath in RegistryPolicyProxy.PolicyKeys)
                 {
                     using (var policyKey = regRoot.OpenSubKey(policyPath, false))
                     {
-                        addSubtree(policyPath, policyKey);
+                        if (policyKey != null) addSubtree(policyPath, policyKey); // Added null check
                     }
                 }
                 return pol;
@@ -665,18 +737,21 @@ namespace PolicyPlus
                 throw new InvalidOperationException("Policy source type not supported");
             }
         }
-        public MsgBoxResult DisplayAdmxLoadErrorReport(IEnumerable<AdmxLoadFailure> Failures, bool AskContinue = false)
+
+        public DialogResult DisplayAdmxLoadErrorReport(IEnumerable<AdmxLoadFailure> Failures, bool AskContinue = false)
         {
-            if (Failures.Count() == 0)
-                return MsgBoxResult.Ok;
-            var boxStyle = AskContinue ? MsgBoxStyle.Exclamation | MsgBoxStyle.YesNo : MsgBoxStyle.Exclamation;
+            if (!Failures.Any())
+                return DialogResult.OK;
+            var boxButtons = AskContinue ? MessageBoxButtons.YesNo : MessageBoxButtons.OK;
             string header = "Errors were encountered while adding administrative templates to the workspace.";
-            return Interaction.MsgBox(header + (AskContinue ? " Continue trying to use this workspace?" : "") + Constants.vbCrLf + Constants.vbCrLf + string.Join(Constants.vbCrLf + Constants.vbCrLf, Failures.Select(f => f.ToString())), boxStyle);
+            return MessageBox.Show(header + (AskContinue ? " Continue trying to use this workspace?" : "") + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine + Environment.NewLine, Failures.Select(f => f.ToString())), "Policy Plus", boxButtons, MessageBoxIcon.Exclamation);
         }
+
         public string GetPreferredLanguageCode()
         {
-            return Conversions.ToString(Configuration.GetValue("LanguageCode", System.Globalization.CultureInfo.CurrentCulture.Name));
+            return Convert.ToString(Configuration.GetValue("LanguageCode", System.Globalization.CultureInfo.CurrentCulture.Name));
         }
+
         private void CategoriesTree_AfterSelect(object sender, TreeViewEventArgs e)
         {
             // When the user selects a new category in the left pane
@@ -685,12 +760,14 @@ namespace PolicyPlus
             ClearSelections();
             UpdatePolicyInfo();
         }
+
         private void ResizePolicyNameColumn(object sender, EventArgs e)
         {
             // Fit the policy name column to the window size
             if (IsHandleCreated)
                 BeginInvoke(new Action(() => PoliciesList.Columns[0].Width = PoliciesList.ClientSize.Width - (PoliciesList.Columns[1].Width + PoliciesList.Columns[2].Width)));
         }
+
         private void PoliciesList_SelectedIndexChanged(object sender, EventArgs e)
         {
             // When the user highlights an item in the right pane
@@ -714,34 +791,37 @@ namespace PolicyPlus
             }
             UpdatePolicyInfo();
         }
+
         private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Close();
         }
+
         private void OpenADMXFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Open ADMX Folder dialog and load the policy definitions
-            if (My.MyProject.Forms.OpenAdmxFolder.ShowDialog() == DialogResult.OK)
+            using (var openAdmxFolderForm = new OpenAdmxFolder())
             {
-                try
+                if (openAdmxFolderForm.ShowDialog() == DialogResult.OK)
                 {
-                    if (My.MyProject.Forms.OpenAdmxFolder.ClearWorkspace)
-                        ClearAdmxWorkspace();
-                    DisplayAdmxLoadErrorReport(AdmxWorkspace.LoadFolder(My.MyProject.Forms.OpenAdmxFolder.SelectedFolder, GetPreferredLanguageCode()));
-                    // Only update the last source when successfully opening a complete source
-                    if (My.MyProject.Forms.OpenAdmxFolder.ClearWorkspace)
-                        Configuration.SetValue("AdmxSource", My.MyProject.Forms.OpenAdmxFolder.SelectedFolder);
+                    try
+                    {
+                        if (openAdmxFolderForm.ClearWorkspace)
+                            ClearAdmxWorkspace();
+                        DisplayAdmxLoadErrorReport(AdmxWorkspace.LoadFolder(openAdmxFolderForm.SelectedFolder, GetPreferredLanguageCode()));
+                        if (openAdmxFolderForm.ClearWorkspace)
+                            Configuration.SetValue("AdmxSource", openAdmxFolderForm.SelectedFolder);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("The folder could not be fully added to the workspace. " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    }
+                    PopulateAdmxUi();
                 }
-                catch (Exception ex)
-                {
-                    Interaction.MsgBox("The folder could not be fully added to the workspace. " + ex.Message, MsgBoxStyle.Exclamation);
-                }
-                PopulateAdmxUi();
             }
         }
+
         private void OpenADMXFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Open a single ADMX file
             using (var ofd = new OpenFileDialog())
             {
                 ofd.Filter = "Policy definitions files|*.admx";
@@ -754,17 +834,19 @@ namespace PolicyPlus
                 }
                 catch (Exception ex)
                 {
-                    Interaction.MsgBox("The ADMX file could not be added to the workspace. " + ex.Message, MsgBoxStyle.Exclamation);
+                    MessageBox.Show("The ADMX file could not be added to the workspace. " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
                 PopulateAdmxUi();
             }
         }
+
         private void CloseADMXWorkspaceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Close all policy definitions and clear the workspace
             ClearAdmxWorkspace();
             PopulateAdmxUi();
         }
+
         private void EmptyCategoriesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Toggle whether empty categories are visible
@@ -772,6 +854,7 @@ namespace PolicyPlus
             EmptyCategoriesToolStripMenuItem.Checked = ViewEmptyCategories;
             MoveToVisibleCategoryAndReload();
         }
+
         private void ComboAppliesTo_SelectedIndexChanged(object sender, EventArgs e)
         {
             // When the user chooses a different section to work with
@@ -796,6 +879,7 @@ namespace PolicyPlus
             }
             MoveToVisibleCategoryAndReload();
         }
+
         private void PoliciesList_DoubleClick(object sender, EventArgs e)
         {
             // When the user opens a policy object in the right pane
@@ -812,124 +896,164 @@ namespace PolicyPlus
                 ShowSettingEditor((PolicyPlusPolicy)policyItem, ViewPolicyTypes);
             }
         }
+
         private void DeduplicatePoliciesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Make otherwise-identical pairs of user and computer policies into single dual-section policies
             ClearSelections();
             int deduped = PolicyProcessing.DeduplicatePolicies(AdmxWorkspace);
-            Interaction.MsgBox("Deduplicated " + deduped + " policies.", MsgBoxStyle.Information);
+            MessageBox.Show("Deduplicated " + deduped + " policies.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
             UpdateCategoryListing();
             UpdatePolicyInfo();
         }
+
         private void FindByIDToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By ID window and try to move to the selected object
-            My.MyProject.Forms.FindById.AdmxWorkspace = AdmxWorkspace;
-            if (My.MyProject.Forms.FindById.ShowDialog() == DialogResult.OK)
+            using (var findByIdForm = new FindById())
             {
-                var selCat = My.MyProject.Forms.FindById.SelectedCategory;
-                var selPol = My.MyProject.Forms.FindById.SelectedPolicy;
-                var selPro = My.MyProject.Forms.FindById.SelectedProduct;
-                var selSup = My.MyProject.Forms.FindById.SelectedSupport;
-                if (selCat is not null)
+                findByIdForm.AdmxWorkspace = AdmxWorkspace;
+                if (findByIdForm.ShowDialog() == DialogResult.OK)
                 {
-                    if (CategoryNodes.ContainsKey(selCat))
+                    var selCat = findByIdForm.SelectedCategory;
+                    var selPol = findByIdForm.SelectedPolicy;
+                    var selPro = findByIdForm.SelectedProduct;
+                    var selSup = findByIdForm.SelectedSupport;
+                    var selectedSection = findByIdForm.SelectedSection;
+
+                    if (selCat is not null)
                     {
-                        CurrentCategory = selCat;
-                        UpdateCategoryListing();
+                        if (CategoryNodes.ContainsKey(selCat))
+                        {
+                            CurrentCategory = selCat;
+                            UpdateCategoryListing();
+                        }
+                        else
+                        {
+                            MessageBox.Show("The category is not currently visible. Change the view settings and try again.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        }
+                    }
+                    else if (selPol is not null)
+                    {
+                        ShowSettingEditor(selPol, (AdmxPolicySection)Math.Min((int)ViewPolicyTypes, (int)selectedSection));
+                        FocusPolicy(selPol);
+                    }
+                    else if (selPro is not null)
+                    {
+                        using (var detailProductForm = new DetailProduct()) detailProductForm.PresentDialog(selPro);
+                    }
+                    else if (selSup is not null)
+                    {
+                        using (var detailSupportForm = new DetailSupport()) detailSupportForm.PresentDialog(selSup);
                     }
                     else
                     {
-                        Interaction.MsgBox("The category is not currently visible. Change the view settings and try again.", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("That object could not be found.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
                 }
-                else if (selPol is not null)
-                {
-                    ShowSettingEditor(selPol, (AdmxPolicySection)Math.Min((int)ViewPolicyTypes, (int)My.MyProject.Forms.FindById.SelectedSection));
-                    FocusPolicy(selPol);
-                }
-                else if (selPro is not null)
-                {
-                    My.MyProject.Forms.DetailProduct.PresentDialog(selPro);
-                }
-                else if (selSup is not null)
-                {
-                    My.MyProject.Forms.DetailSupport.PresentDialog(selSup);
-                }
-                else
-                {
-                    Interaction.MsgBox("That object could not be found.", MsgBoxStyle.Exclamation);
-                }
             }
         }
+
         private void OpenPolicyResourcesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Open Policy Resources dialog and open its loaders
             if (!ConfirmSaveChanges())
                 return;
-            if (My.MyProject.Forms.OpenPol.ShowDialog() == DialogResult.OK)
+            using (var openPolForm = new OpenPol())
             {
-                OpenPolicyLoaders(My.MyProject.Forms.OpenPol.SelectedUser, My.MyProject.Forms.OpenPol.SelectedComputer, false);
-                MoveToVisibleCategoryAndReload();
+                if (UserPolicyLoader != null && CompPolicyLoader != null)
+                {
+                    openPolForm.SetLastSources(
+                        CompPolicyLoader.Source,
+                        CompPolicyLoader.LoaderData ?? "",
+                        UserPolicyLoader.Source,
+                        UserPolicyLoader.LoaderData ?? ""
+                    );
+                }
+
+                if (openPolForm.ShowDialog() == DialogResult.OK)
+                {
+                    OpenPolicyLoaders(openPolForm.SelectedUser, openPolForm.SelectedComputer, false);
+                    MoveToVisibleCategoryAndReload();
+                }
             }
         }
+
         private void SavePoliciesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Save policy state and comments to disk
-            // Doesn't matter, it's just comments
-            void saveComments(Dictionary<string, string> Comments, PolicyLoader Loader) { try { if (Comments is not null) CmtxFile.FromCommentTable(Comments).Save(Loader.GetCmtxPath()); } catch (Exception ex) { } };
+            void saveComments(Dictionary<string, string> Comments, PolicyLoader Loader)
+            {
+                try
+                {
+                    if (Comments is not null && Loader != null) // Added null check for Loader
+                        CmtxFile.FromCommentTable(Comments).Save(Loader.GetCmtxPath());
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle exception appropriately
+                }
+            };
             saveComments(UserComments, UserPolicyLoader);
             saveComments(CompComments, CompPolicyLoader);
             try
             {
                 string compStatus = "not writable";
                 string userStatus = "not writable";
-                if (CompPolicyLoader.GetWritability() == PolicySourceWritability.Writable)
+                if (CompPolicyLoader != null && CompPolicyLoader.GetWritability() == PolicySourceWritability.Writable) // Added null check
                     compStatus = CompPolicyLoader.Save();
-                if (UserPolicyLoader.GetWritability() == PolicySourceWritability.Writable)
+                if (UserPolicyLoader != null && UserPolicyLoader.GetWritability() == PolicySourceWritability.Writable) // Added null check
                     userStatus = UserPolicyLoader.Save();
-                Configuration.SetValue("CompSourceType", (int)CompPolicyLoader.Source);
-                Configuration.SetValue("UserSourceType", (int)UserPolicyLoader.Source);
-                Configuration.SetValue("CompSourceData", CompPolicyLoader.LoaderData ?? "");
-                Configuration.SetValue("UserSourceData", UserPolicyLoader.LoaderData ?? "");
-                Interaction.MsgBox("Success." + Constants.vbCrLf + Constants.vbCrLf + "User policies: " + userStatus + "." + Constants.vbCrLf + Constants.vbCrLf + "Computer policies: " + compStatus + ".", MsgBoxStyle.Information);
+                if (CompPolicyLoader != null)
+                { // Added null check
+                    Configuration.SetValue("CompSourceType", (int)CompPolicyLoader.Source);
+                    Configuration.SetValue("CompSourceData", CompPolicyLoader.LoaderData ?? "");
+                }
+                if (UserPolicyLoader != null)
+                { // Added null check
+                    Configuration.SetValue("UserSourceType", (int)UserPolicyLoader.Source);
+                    Configuration.SetValue("UserSourceData", UserPolicyLoader.LoaderData ?? "");
+                }
+                MessageBox.Show("Success." + Environment.NewLine + Environment.NewLine + "User policies: " + userStatus + "." + Environment.NewLine + Environment.NewLine + "Computer policies: " + compStatus + ".", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 PoliciesChanged = false;
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("Saving failed!" + Constants.vbCrLf + Constants.vbCrLf + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show("Saving failed!" + Environment.NewLine + Environment.NewLine + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
+
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show author and version information if it was compiled into the program
-            string about = $"Policy Plus by Jordan White.{Constants.vbCrLf}Originally created by Ben Nordick.{Constants.vbCrLf}{Constants.vbCrLf}Creative Commons Attribution 4.0 International License.{Constants.vbCrLf}{Constants.vbCrLf}Available on GitHub: https://github.com/JordanJWhite/PolicyPlus";
+            string about = $"Policy Plus by Jordan White.{Environment.NewLine}Originally created by Ben Nordick.{Environment.NewLine}{Environment.NewLine}Creative Commons Attribution 4.0 International License.{Environment.NewLine}{Environment.NewLine}Available on GitHub: https://github.com/JordanJWhite/PolicyPlus";
             if (!string.IsNullOrEmpty(VersionData.Version.Trim()))
-                about += $"{Constants.vbCrLf}{Constants.vbCrLf}Version: {VersionData.Version.Trim()}.";
-            Interaction.MsgBox(about, MsgBoxStyle.Information);
+                about += $"{Environment.NewLine}{Environment.NewLine}Version: {VersionData.Version.Trim()}.";
+            MessageBox.Show(about, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
         private void ByTextToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By Text window and start the search
-            if (My.MyProject.Forms.FindByText.PresentDialog(UserComments, CompComments) == DialogResult.OK)
+            using (var findByTextForm = new FindByText())
             {
-                ShowSearchDialog(My.MyProject.Forms.FindByText.Searcher);
+                if (findByTextForm.PresentDialog(UserComments, CompComments) == DialogResult.OK)
+                {
+                    ShowSearchDialog(findByTextForm.Searcher);
+                }
             }
         }
+
         private void SearchResultsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Show the search results window but don't start a search
             ShowSearchDialog(null);
         }
+
         private void FindNextToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Move to the next policy in the search results
             do
             {
-                var nextPol = My.MyProject.Forms.FindResults.NextPolicy();
+                var nextPol = GetFindResultsDialog().NextPolicy(); // Use the instance
                 if (nextPol is null)
                 {
-                    Interaction.MsgBox("There are no more results that match the filter.", MsgBoxStyle.Information);
+                    MessageBox.Show("There are no more results that match the filter.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 }
                 else if (ShouldShowPolicy(nextPol))
@@ -940,12 +1064,16 @@ namespace PolicyPlus
             }
             while (true);
         }
+
         private void ByRegistryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By Registry window and start the search
-            if (My.MyProject.Forms.FindByRegistry.ShowDialog() == DialogResult.OK)
-                ShowSearchDialog(My.MyProject.Forms.FindByRegistry.Searcher);
+            using (var findByRegistryForm = new FindByRegistry())
+            {
+                if (findByRegistryForm.ShowDialog() == DialogResult.OK)
+                    ShowSearchDialog(findByRegistryForm.Searcher);
+            }
         }
+
         private void SettingInfoPanel_ClientSizeChanged(object sender, EventArgs e)
         {
             // Finagle the middle pane's UI elements
@@ -961,32 +1089,45 @@ namespace PolicyPlus
             PolicyInfoTable.PerformLayout(); // Force the table to take up its full desired size
             PInvoke.ShowScrollBar(SettingInfoPanel.Handle, 0, false); // 0 means horizontal
         }
+
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (!ConfirmSaveChanges())
                 e.Cancel = true;
+
+            // Dispose the shared FindResults dialog if it exists
+            if (findResultsDialog != null && !findResultsDialog.IsDisposed)
+            {
+                findResultsDialog.Dispose();
+            }
         }
+
         private void Main_Closed(object sender, EventArgs e)
         {
             ClosePolicySources(); // Make sure everything is cleaned up before quitting
         }
+
         private void PoliciesList_KeyDown(object sender, KeyEventArgs e)
         {
             // Activate a right pane item if the user presses Enter on it
             if (e.KeyCode == Keys.Enter & PoliciesList.SelectedItems.Count > 0)
                 PoliciesList_DoubleClick(sender, e);
         }
+
         private void FilterOptionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Filter Options dialog and refresh if the filter changes
-            if (My.MyProject.Forms.FilterOptions.PresentDialog(CurrentFilter, AdmxWorkspace) == DialogResult.OK)
+            using (var filterOptionsForm = new FilterOptions())
             {
-                CurrentFilter = My.MyProject.Forms.FilterOptions.CurrentFilter;
-                ViewFilteredOnly = true;
-                OnlyFilteredObjectsToolStripMenuItem.Checked = true;
-                MoveToVisibleCategoryAndReload();
+                if (filterOptionsForm.PresentDialog(CurrentFilter, AdmxWorkspace) == DialogResult.OK)
+                {
+                    CurrentFilter = filterOptionsForm.CurrentFilter;
+                    ViewFilteredOnly = true;
+                    OnlyFilteredObjectsToolStripMenuItem.Checked = true;
+                    MoveToVisibleCategoryAndReload();
+                }
             }
         }
+
         private void OnlyFilteredObjectsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Toggle whether the filter is used
@@ -994,28 +1135,31 @@ namespace PolicyPlus
             OnlyFilteredObjectsToolStripMenuItem.Checked = ViewFilteredOnly;
             MoveToVisibleCategoryAndReload();
         }
+
         private void ImportSemanticPolicyToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Open the SPOL import dialog and apply the data
-            if (My.MyProject.Forms.ImportSpol.ShowDialog() == DialogResult.OK)
+            using (var importSpolForm = new ImportSpol())
             {
-                var spol = My.MyProject.Forms.ImportSpol.Spol;
-                int fails = spol.ApplyAll(AdmxWorkspace, UserPolicySource, CompPolicySource, UserComments, CompComments);
-                PoliciesChanged = true;
-                MoveToVisibleCategoryAndReload();
-                if (fails == 0)
+                if (importSpolForm.ShowDialog() == DialogResult.OK)
                 {
-                    Interaction.MsgBox("Semantic Policy successfully applied.", MsgBoxStyle.Information);
-                }
-                else
-                {
-                    Interaction.MsgBox(fails + " out of " + spol.Policies.Count + " could not be applied.", MsgBoxStyle.Exclamation);
+                    var spol = importSpolForm.Spol;
+                    int fails = spol.ApplyAll(AdmxWorkspace, UserPolicySource, CompPolicySource, UserComments, CompComments);
+                    PoliciesChanged = true;
+                    MoveToVisibleCategoryAndReload();
+                    if (fails == 0)
+                    {
+                        MessageBox.Show("Semantic Policy successfully applied.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show(fails + " out of " + spol.Policies.Count + " could not be applied.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    }
                 }
             }
         }
+
         private void ImportPOLToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Open a POL file and write it to a policy source
             using (var ofd = new OpenFileDialog())
             {
                 ofd.Filter = "POL files|*.pol";
@@ -1028,122 +1172,160 @@ namespace PolicyPlus
                     }
                     catch (Exception ex)
                     {
-                        Interaction.MsgBox("The POL file could not be loaded.", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("The POL file could not be loaded. " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation); // Added ex.Message
                         return;
                     }
-                    if (My.MyProject.Forms.OpenSection.PresentDialog(true, true) == DialogResult.OK)
+                    using (var openSectionForm = new OpenSection())
                     {
-                        var section = My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.User ? UserPolicySource : CompPolicySource;
-                        pol.Apply(section);
-                        PoliciesChanged = true;
-                        MoveToVisibleCategoryAndReload();
-                        Interaction.MsgBox("POL import successful.", MsgBoxStyle.Information);
+                        if (openSectionForm.PresentDialog(true, true) == DialogResult.OK)
+                        {
+                            var section = openSectionForm.SelectedSection == AdmxPolicySection.User ? UserPolicySource : CompPolicySource;
+                            pol.Apply(section);
+                            PoliciesChanged = true;
+                            MoveToVisibleCategoryAndReload();
+                            MessageBox.Show("POL import successful.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
                     }
                 }
             }
         }
+
         private void ExportPOLToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Create a POL file from a current policy source
             using (var sfd = new SaveFileDialog())
             {
                 sfd.Filter = "POL files|*.pol";
-                if (sfd.ShowDialog() == DialogResult.OK && My.MyProject.Forms.OpenSection.PresentDialog(true, true) == DialogResult.OK)
+                using (var openSectionForm = new OpenSection())
                 {
-                    var section = My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource;
-                    try
+                    if (sfd.ShowDialog() == DialogResult.OK && openSectionForm.PresentDialog(true, true) == DialogResult.OK)
                     {
-                        GetOrCreatePolFromPolicySource(section).Save(sfd.FileName);
-                        Interaction.MsgBox("POL exported successfully.", MsgBoxStyle.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        Interaction.MsgBox("The POL file could not be saved.", MsgBoxStyle.Exclamation);
+                        var section = openSectionForm.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource;
+                        try
+                        {
+                            GetOrCreatePolFromPolicySource(section).Save(sfd.FileName);
+                            MessageBox.Show("POL exported successfully.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("The POL file could not be saved. " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation); // Added ex.Message
+                        }
                     }
                 }
             }
         }
+
         private void AcquireADMXFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Acquire ADMX Files dialog and load the new ADMX files
-            if (My.MyProject.Forms.DownloadAdmx.ShowDialog() == DialogResult.OK)
+            using (var downloadAdmxForm = new DownloadAdmx())
             {
-                if (!string.IsNullOrEmpty(My.MyProject.Forms.DownloadAdmx.NewPolicySourceFolder))
+                if (downloadAdmxForm.ShowDialog() == DialogResult.OK)
                 {
-                    ClearAdmxWorkspace();
-                    DisplayAdmxLoadErrorReport(AdmxWorkspace.LoadFolder(My.MyProject.Forms.DownloadAdmx.NewPolicySourceFolder, GetPreferredLanguageCode()));
-                    Configuration.SetValue("AdmxSource", My.MyProject.Forms.DownloadAdmx.NewPolicySourceFolder);
-                    PopulateAdmxUi();
+                    if (!string.IsNullOrEmpty(downloadAdmxForm.NewPolicySourceFolder))
+                    {
+                        ClearAdmxWorkspace();
+                        DisplayAdmxLoadErrorReport(AdmxWorkspace.LoadFolder(downloadAdmxForm.NewPolicySourceFolder, GetPreferredLanguageCode()));
+                        Configuration.SetValue("AdmxSource", downloadAdmxForm.NewPolicySourceFolder);
+                        PopulateAdmxUi();
+                    }
                 }
             }
         }
+
         private void LoadedADMXFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.LoadedAdmx.PresentDialog(AdmxWorkspace);
+            using (var loadedAdmxForm = new LoadedAdmx()) loadedAdmxForm.PresentDialog(AdmxWorkspace);
         }
+
         private void AllSupportDefinitionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.LoadedSupportDefinitions.PresentDialog(AdmxWorkspace);
+            using (var loadedSupportForm = new LoadedSupportDefinitions()) loadedSupportForm.PresentDialog(AdmxWorkspace);
         }
+
         private void AllProductsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.LoadedProducts.PresentDialog(AdmxWorkspace);
+            using (var loadedProductsForm = new LoadedProducts()) loadedProductsForm.PresentDialog(AdmxWorkspace);
         }
+
         private void EditRawPOLToolStripMenuItem_Click(object sender, EventArgs e)
         {
             bool userIsPol = UserPolicySource is PolFile;
             bool compIsPol = CompPolicySource is PolFile;
             if (!(userIsPol | compIsPol))
             {
-                Interaction.MsgBox("Neither loaded source is backed by a POL file.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Neither loaded source is backed by a POL file.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
-            if (Conversions.ToInteger(Configuration.GetValue("EditPolDangerAcknowledged", 0)) == 0)
+            if (Convert.ToInt32(Configuration.GetValue("EditPolDangerAcknowledged", 0)) == 0)
             {
-                if (Interaction.MsgBox("Caution! This tool is for very advanced users. Improper modifications may result in inconsistencies in policies' states." + Constants.vbCrLf + Constants.vbCrLf + "Changes operate directly on the policy source, though they will not be committed to disk until you save. Are you sure you want to continue?", MsgBoxStyle.Exclamation | MsgBoxStyle.YesNo) == MsgBoxResult.No)
+                if (MessageBox.Show("Caution! This tool is for very advanced users. Improper modifications may result in inconsistencies in policies' states." + Environment.NewLine + Environment.NewLine + "Changes operate directly on the policy source, though they will not be committed to disk until you save. Are you sure you want to continue?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
                     return;
                 Configuration.SetValue("EditPolDangerAcknowledged", 1);
             }
-            if (My.MyProject.Forms.OpenSection.PresentDialog(userIsPol, compIsPol) == DialogResult.OK)
+            using (var openSectionForm = new OpenSection())
             {
-                My.MyProject.Forms.EditPol.PresentDialog(PolicyIcons, (PolFile)(My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource), My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.User);
-                PoliciesChanged = true;
+                if (openSectionForm.PresentDialog(userIsPol, compIsPol) == DialogResult.OK)
+                {
+                    using (var editPolForm = new EditPol())
+                    {
+                        editPolForm.PresentDialog(PolicyIcons, (PolFile)(openSectionForm.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource), openSectionForm.SelectedSection == AdmxPolicySection.User);
+                    }
+                    PoliciesChanged = true;
+                }
             }
             MoveToVisibleCategoryAndReload();
         }
+
         private void ExportREGToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (My.MyProject.Forms.OpenSection.PresentDialog(true, true) == DialogResult.OK)
+            using (var openSectionForm = new OpenSection())
             {
-                var source = My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource;
-                My.MyProject.Forms.ExportReg.PresentDialog("", GetOrCreatePolFromPolicySource(source), My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.User);
+                if (openSectionForm.PresentDialog(true, true) == DialogResult.OK)
+                {
+                    var source = openSectionForm.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource;
+                    using (var exportRegForm = new ExportReg())
+                    {
+                        exportRegForm.PresentDialog("", GetOrCreatePolFromPolicySource(source), openSectionForm.SelectedSection == AdmxPolicySection.User);
+                    }
+                }
             }
         }
+
         private void ImportREGToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (My.MyProject.Forms.OpenSection.PresentDialog(true, true) == DialogResult.OK)
+            using (var openSectionForm = new OpenSection())
             {
-                var source = My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource;
-                if (My.MyProject.Forms.ImportReg.PresentDialog(source) == DialogResult.OK)
+                if (openSectionForm.PresentDialog(true, true) == DialogResult.OK)
                 {
-                    PoliciesChanged = true;
-                    MoveToVisibleCategoryAndReload();
+                    var source = openSectionForm.SelectedSection == AdmxPolicySection.Machine ? CompPolicySource : UserPolicySource;
+                    using (var importRegForm = new ImportReg())
+                    {
+                        if (importRegForm.PresentDialog(source) == DialogResult.OK)
+                        {
+                            PoliciesChanged = true;
+                            MoveToVisibleCategoryAndReload();
+                        }
+                    }
                 }
             }
         }
+
         private void SetADMLLanguageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (My.MyProject.Forms.LanguageOptions.PresentDialog(GetPreferredLanguageCode()) == DialogResult.OK)
+            using (var langOptsForm = new LanguageOptions())
             {
-                Configuration.SetValue("LanguageCode", My.MyProject.Forms.LanguageOptions.NewLanguage);
-                if (Interaction.MsgBox("Language changes will take effect when ADML files are next loaded. Would you like to reload the workspace now?", MsgBoxStyle.YesNo | MsgBoxStyle.Question) == MsgBoxResult.Yes)
+                if (langOptsForm.PresentDialog(GetPreferredLanguageCode()) == DialogResult.OK)
                 {
-                    ClearAdmxWorkspace();
-                    OpenLastAdmxSource();
-                    PopulateAdmxUi();
+                    Configuration.SetValue("LanguageCode", langOptsForm.NewLanguage);
+                    if (MessageBox.Show("Language changes will take effect when ADML files are next loaded. Would you like to reload the workspace now?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        ClearAdmxWorkspace();
+                        OpenLastAdmxSource();
+                        PopulateAdmxUi();
+                    }
                 }
             }
         }
+
         private void RunGpupdateToolStripMenuItem_Click(object sender, EventArgs e)
         {
             try
@@ -1152,18 +1334,19 @@ namespace PolicyPlus
                 proc.WaitForExit();
                 if (proc.ExitCode == 0)
                 {
-                    Interaction.MsgBox("Group Policy update completed successfully.", MsgBoxStyle.Information);
+                    MessageBox.Show("Group Policy update completed successfully.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
-                    Interaction.MsgBox($"Group Policy update finished with exit code {proc.ExitCode}.", MsgBoxStyle.Exclamation);
+                    MessageBox.Show($"Group Policy update finished with exit code {proc.ExitCode}.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("Could not run Group Policy update: " + ex.Message, MsgBoxStyle.Critical);
+                MessageBox.Show("Could not run Group Policy update: " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void PolicyObjectContext_Opening(object sender, CancelEventArgs e)
         {
             // When the right-click menu is opened
@@ -1188,13 +1371,14 @@ namespace PolicyPlus
             foreach (var item in PolicyObjectContext.Items.OfType<ToolStripMenuItem>())
             {
                 bool ok = true;
-                if (Conversions.ToString(item.Tag) == "P" & showingForCategory)
+                if (Convert.ToString(item.Tag) == "P" & showingForCategory)
                     ok = false;
-                if (Conversions.ToString(item.Tag) == "C" & !showingForCategory)
+                if (Convert.ToString(item.Tag) == "C" & !showingForCategory)
                     ok = false;
                 item.Visible = ok;
             }
         }
+
         private void PolicyObjectContext_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             // When the user clicks an item in the right-click menu
@@ -1210,35 +1394,37 @@ namespace PolicyPlus
             }
             else if (ReferenceEquals(e.ClickedItem, CmeAllDetails))
             {
-                if (polObject is PolicyPlusCategory)
+                if (polObject is PolicyPlusCategory category)
                 {
-                    My.MyProject.Forms.DetailCategory.PresentDialog((PolicyPlusCategory)polObject);
+                    using (var detailCategoryForm = new DetailCategory()) detailCategoryForm.PresentDialog(category);
                 }
-                else
+                else if (polObject is PolicyPlusPolicy policy)
                 {
-                    My.MyProject.Forms.DetailPolicy.PresentDialog((PolicyPlusPolicy)polObject);
+                    using (var detailPolicyForm = new DetailPolicy()) detailPolicyForm.PresentDialog(policy);
                 }
             }
             else if (ReferenceEquals(e.ClickedItem, CmePolInspectElements))
             {
-                My.MyProject.Forms.InspectPolicyElements.PresentDialog((PolicyPlusPolicy)polObject, PolicyIcons, AdmxWorkspace);
+                using (var inspectElementsForm = new InspectPolicyElements()) inspectElementsForm.PresentDialog((PolicyPlusPolicy)polObject, PolicyIcons, AdmxWorkspace);
             }
             else if (ReferenceEquals(e.ClickedItem, CmePolSpolFragment))
             {
-                My.MyProject.Forms.InspectSpolFragment.PresentDialog((PolicyPlusPolicy)polObject, AdmxWorkspace, CompPolicySource, UserPolicySource, CompComments, UserComments);
+                using (var inspectSpolForm = new InspectSpolFragment()) inspectSpolForm.PresentDialog((PolicyPlusPolicy)polObject, AdmxWorkspace, CompPolicySource, UserPolicySource, CompComments, UserComments);
             }
         }
+
         private void CategoriesTree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
             // Right-clicking doesn't actually select the node by default
             if (e.Button == MouseButtons.Right)
                 CategoriesTree.SelectedNode = e.Node;
         }
+
         public static string PrettifyDescription(string Description)
         {
-            // Remove extra indentation from paragraphs
+            if (string.IsNullOrEmpty(Description)) return string.Empty;
             var sb = new StringBuilder();
-            foreach (var line in Description.Split(Conversions.ToChar(Constants.vbCrLf)))
+            foreach (var line in Description.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None)) // Fixed string split
                 sb.AppendLine(line.Trim());
             return sb.ToString().TrimEnd();
         }

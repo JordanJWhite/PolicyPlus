@@ -83,7 +83,8 @@ namespace PolicyPlus
             if (lsv.SelectedItems.Count == 0)
                 return;
             PolicyPlusProduct product = (PolicyPlusProduct)lsv.SelectedItems[0].Tag;
-            My.MyProject.Forms.DetailProduct.PresentDialog(product);
+            var detailProductForm = Program.GetDetailProductForm();
+            detailProductForm.PresentDialog(product);
         }
         public void ListKeyPressed(object sender, KeyEventArgs e)
         {

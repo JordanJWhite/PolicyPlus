@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
 
 namespace PolicyPlus
 {
@@ -38,7 +37,7 @@ namespace PolicyPlus
         {
             if (string.IsNullOrEmpty(TextReg.Text))
             {
-                Interaction.MsgBox("Please specify a filename and path for the exported REG.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please specify a filename and path for the exported REG.", "Export", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             var reg = new RegFile();
@@ -48,12 +47,12 @@ namespace PolicyPlus
             {
                 Source.Apply(reg);
                 reg.Save(TextReg.Text);
-                Interaction.MsgBox("REG exported successfully.", MsgBoxStyle.Information);
+                MessageBox.Show("REG exported successfully.", "Export", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.OK;
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("Failed to export REG!", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Failed to export REG!", "Export", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
     }
