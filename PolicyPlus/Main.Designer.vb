@@ -85,12 +85,12 @@ Partial Class Main
         Me.PolicyTitleLabel = New System.Windows.Forms.Label()
         Me.PolicySupportedLabel = New System.Windows.Forms.Label()
         Me.PolicyDescLabel = New System.Windows.Forms.Label()
-        Me.InfoStrip = New System.Windows.Forms.StatusStrip()
-        Me.ComputerSourceLabel = New System.Windows.Forms.ToolStripStatusLabel()
-        Me.UserSourceLabel = New System.Windows.Forms.ToolStripStatusLabel()
         Me.PolicyIsPrefTable = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.PolicyIsPrefLabel = New System.Windows.Forms.Label()
+        Me.InfoStrip = New System.Windows.Forms.StatusStrip()
+        Me.ComputerSourceLabel = New System.Windows.Forms.ToolStripStatusLabel()
+        Me.UserSourceLabel = New System.Windows.Forms.ToolStripStatusLabel()
         ChSettingEnabled = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         ChSettingCommented = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         ToolStripSeparator1 = New System.Windows.Forms.ToolStripSeparator()
@@ -109,9 +109,9 @@ Partial Class Main
         Me.PolicyObjectContext.SuspendLayout()
         Me.SettingInfoPanel.SuspendLayout()
         Me.PolicyInfoTable.SuspendLayout()
-        Me.InfoStrip.SuspendLayout()
         Me.PolicyIsPrefTable.SuspendLayout()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.InfoStrip.SuspendLayout()
         Me.SuspendLayout()
         '
         'ChSettingEnabled
@@ -617,27 +617,6 @@ Partial Class Main
         Me.PolicyDescLabel.Text = "Policy description"
         Me.PolicyDescLabel.UseMnemonic = False
         '
-        'InfoStrip
-        '
-        Me.InfoStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {ToolStripStatusLabel1, Me.ComputerSourceLabel, ToolStripStatusLabel2, Me.UserSourceLabel})
-        Me.InfoStrip.Location = New System.Drawing.Point(0, 352)
-        Me.InfoStrip.Name = "InfoStrip"
-        Me.InfoStrip.Size = New System.Drawing.Size(706, 22)
-        Me.InfoStrip.TabIndex = 2
-        Me.InfoStrip.Text = "StatusStrip1"
-        '
-        'ComputerSourceLabel
-        '
-        Me.ComputerSourceLabel.Name = "ComputerSourceLabel"
-        Me.ComputerSourceLabel.Size = New System.Drawing.Size(85, 17)
-        Me.ComputerSourceLabel.Text = "Computer info"
-        '
-        'UserSourceLabel
-        '
-        Me.UserSourceLabel.Name = "UserSourceLabel"
-        Me.UserSourceLabel.Size = New System.Drawing.Size(54, 17)
-        Me.UserSourceLabel.Text = "User info"
-        '
         'PolicyIsPrefTable
         '
         Me.PolicyIsPrefTable.AutoSize = True
@@ -676,6 +655,27 @@ Partial Class Main
         Me.PolicyIsPrefLabel.Text = "Because it is not stored in a Policies section of the Registry, this policy is a " &
     "preference and will not be automatically undone if the setting is removed."
         '
+        'InfoStrip
+        '
+        Me.InfoStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {ToolStripStatusLabel1, Me.ComputerSourceLabel, ToolStripStatusLabel2, Me.UserSourceLabel})
+        Me.InfoStrip.Location = New System.Drawing.Point(0, 352)
+        Me.InfoStrip.Name = "InfoStrip"
+        Me.InfoStrip.Size = New System.Drawing.Size(706, 22)
+        Me.InfoStrip.TabIndex = 2
+        Me.InfoStrip.Text = "StatusStrip1"
+        '
+        'ComputerSourceLabel
+        '
+        Me.ComputerSourceLabel.Name = "ComputerSourceLabel"
+        Me.ComputerSourceLabel.Size = New System.Drawing.Size(85, 17)
+        Me.ComputerSourceLabel.Text = "Computer info"
+        '
+        'UserSourceLabel
+        '
+        Me.UserSourceLabel.Name = "UserSourceLabel"
+        Me.UserSourceLabel.Size = New System.Drawing.Size(54, 17)
+        Me.UserSourceLabel.Text = "User info"
+        '
         'Main
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -684,10 +684,11 @@ Partial Class Main
         Me.Controls.Add(Me.InfoStrip)
         Me.Controls.Add(Me.SplitContainer)
         Me.Controls.Add(Me.MainMenu)
+        Me.DoubleBuffered = True
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MainMenuStrip = Me.MainMenu
         Me.MinimumSize = New System.Drawing.Size(600, 400)
         Me.Name = "Main"
-        Me.ShowIcon = False
         Me.Text = "Policy Plus"
         Me.MainMenu.ResumeLayout(False)
         Me.MainMenu.PerformLayout()
@@ -700,11 +701,11 @@ Partial Class Main
         Me.SettingInfoPanel.PerformLayout()
         Me.PolicyInfoTable.ResumeLayout(False)
         Me.PolicyInfoTable.PerformLayout()
-        Me.InfoStrip.ResumeLayout(False)
-        Me.InfoStrip.PerformLayout()
         Me.PolicyIsPrefTable.ResumeLayout(False)
         Me.PolicyIsPrefTable.PerformLayout()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.InfoStrip.ResumeLayout(False)
+        Me.InfoStrip.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
