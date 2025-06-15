@@ -8,7 +8,7 @@
     <OutputType>WinExe</OutputType>
     <StartupObject>PolicyPlus.My.MyApplication</StartupObject>
     <RootNamespace>PolicyPlus</RootNamespace>
-    <AssemblyName>Policy Plus</AssemblyName>
+    <AssemblyName>PolicyPlus</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>WindowsForms</MyType>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
@@ -22,7 +22,7 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <OutputPath>bin\Debug\</OutputPath>
-    <DocumentationFile>Policy Plus.xml</DocumentationFile>
+    <DocumentationFile>PolicyPlus.xml</DocumentationFile>
     <NoWarn>41999,42016</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
     <WarningsAsErrors>42017,42018,42019,42020,42021,42022,42030,42032,42036,42104,42108,42109</WarningsAsErrors>
@@ -34,7 +34,7 @@
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DocumentationFile>Policy Plus.xml</DocumentationFile>
+    <DocumentationFile>PolicyPlus.xml</DocumentationFile>
     <NoWarn>41999,42016</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
     <WarningsAsErrors>42017,42018,42019,42020,42021,42022,42030,42032,42036,42104,42108,42109</WarningsAsErrors>
@@ -53,6 +53,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>PolicyPlusIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -447,6 +450,9 @@
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="PolicyPlusIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

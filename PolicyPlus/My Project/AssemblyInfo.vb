@@ -9,10 +9,10 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("Policy Plus")>
-<Assembly: AssemblyDescription("")>
+<Assembly: AssemblyDescription("Local Group Policy Editor plus more, for all Windows editions. Policy Plus makes Group Policy settings available to everyone, including on Home editions. View, edit, and manage Registry-based policies with a modern interface.")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Policy Plus")>
-<Assembly: AssemblyCopyright("Copyright © Ben Nordick 2016-2021")>
+<Assembly: AssemblyCopyright("Copyright © Ben Nordick, Jordan White")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
