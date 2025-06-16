@@ -1,0 +1,26 @@
+name: .NET 9 Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+          include-prerelease: true
+
+      - name: Restore dependencies
+        run: dotnet restore Source/PolicyPlus.sln
+
+      - name: Build
+        run: dotnet build Source/PolicyPlus.sln --configuration Release --no-restore
