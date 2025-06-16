@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Security.AccessControl;
+using System.IO; // Added for FileInfo and DirectoryInfo
 
 namespace PolicyPlus
 {
@@ -63,14 +65,17 @@ namespace PolicyPlus
             }
             void takeOwnership(string Folder)
             {
-                var dacl = System.IO.Directory.GetAccessControl(Folder);
+                // Use DirectoryInfo instead of static method
+                var dirInfo = new DirectoryInfo(Folder);
+                DirectorySecurity dacl = dirInfo.GetAccessControl();
                 var adminSid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid, null);
                 dacl.SetOwner(adminSid);
-                System.IO.Directory.SetAccessControl(Folder, dacl);
-                dacl = System.IO.Directory.GetAccessControl(Folder);
-                var allowRule = new System.Security.AccessControl.FileSystemAccessRule(adminSid, System.Security.AccessControl.FileSystemRights.FullControl, System.Security.AccessControl.AccessControlType.Allow);
+                dirInfo.SetAccessControl(dacl);
+                
+                dacl = dirInfo.GetAccessControl();
+                var allowRule = new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, AccessControlType.Allow);
                 dacl.AddAccessRule(allowRule);
-                System.IO.Directory.SetAccessControl(Folder, dacl);
+                dirInfo.SetAccessControl(dacl);
             };
             void moveFilesInDir(string Source, string Dest, bool InheritAcl)
             {
@@ -80,9 +85,10 @@ namespace PolicyPlus
                 {
                     if (creatingNew & InheritAcl)
                     {
-                        var dirAcl = new System.Security.AccessControl.DirectorySecurity();
+                        var dirInfo = new DirectoryInfo(Dest);
+                        DirectorySecurity dirAcl = new DirectorySecurity();
                         dirAcl.SetAccessRuleProtection(false, true);
-                        System.IO.Directory.SetAccessControl(Dest, dirAcl);
+                        dirInfo.SetAccessControl(dirAcl);
                     }
                     else if (!creatingNew)
                     {
@@ -98,9 +104,10 @@ namespace PolicyPlus
                     System.IO.File.Move(@file, newName);
                     if (isAdmin)
                     {
-                        var fileAcl = new System.Security.AccessControl.FileSecurity();
+                        var fileInfo = new FileInfo(newName);
+                        FileSecurity fileAcl = new FileSecurity();
                         fileAcl.SetAccessRuleProtection(false, true);
-                        System.IO.File.SetAccessControl(newName, fileAcl);
+                        fileInfo.SetAccessControl(fileAcl);
                     }
                 }
             };
