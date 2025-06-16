@@ -31,7 +31,6 @@
 		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<Import Include="Microsoft.VisualBasic" />
 		<Import Include="System" />
 		<Import Include="System.Collections" />
 		<Import Include="System.Collections.Generic" />

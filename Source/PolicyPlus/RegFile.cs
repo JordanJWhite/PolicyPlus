@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-// Removed Microsoft.VisualBasic and Microsoft.VisualBasic.CompilerServices
 using Microsoft.Win32;
 
 namespace PolicyPlus

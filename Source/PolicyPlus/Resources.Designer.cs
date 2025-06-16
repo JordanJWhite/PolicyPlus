@@ -9,7 +9,6 @@
 // ------------------------------------------------------------------------------
 
 using System.Diagnostics;
-// Removed Microsoft.VisualBasic reference
 
 namespace PolicyPlus.My.Resources
 {
