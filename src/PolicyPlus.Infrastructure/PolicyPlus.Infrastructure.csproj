@@ -6,4 +6,53 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Files\GroupPolicy\Constants\SchemaFileNames.cs" />
+    <Compile Remove="Files\GroupPolicy\Constants\XmlAttributeNames.cs" />
+    <Compile Remove="Files\GroupPolicy\Constants\XmlElementNames.cs" />
+    <Compile Remove="Files\GroupPolicy\Constants\XmlNamespaces.cs" />
+    <Compile Remove="Files\GroupPolicy\Exceptions\PolicyInvalidValueException.cs" />
+    <Compile Remove="Files\GroupPolicy\Exceptions\PolicyMissingAttributeException.cs" />
+    <Compile Remove="Files\GroupPolicy\Exceptions\PolicyMissingElementException.cs" />
+    <Compile Remove="Files\GroupPolicy\Exceptions\PolicyParsingException.cs" />
+    <Compile Remove="Files\GroupPolicy\Exceptions\PolicySchemaValidationException.cs" />
+    <Compile Remove="Files\GroupPolicy\Exceptions\PolicyUnexpectedElementException.cs" />
+    <Compile Remove="Files\GroupPolicy\Utilities\XmlParserUtilities.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Files\GroupPolicy\Builders\" />
+    <Folder Include="Windows\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Files\GroupPolicy\Constants\SchemaFileNames.cs" />
+    <None Include="Files\GroupPolicy\Constants\XmlAttributeNames.cs" />
+    <None Include="Files\GroupPolicy\Constants\XmlElementNames.cs" />
+    <None Include="Files\GroupPolicy\Constants\XmlNamespaces.cs" />
+    <None Include="Files\GroupPolicy\Exceptions\PolicyInvalidValueException.cs" />
+    <None Include="Files\GroupPolicy\Exceptions\PolicyMissingAttributeException.cs" />
+    <None Include="Files\GroupPolicy\Exceptions\PolicyMissingElementException.cs" />
+    <None Include="Files\GroupPolicy\Exceptions\PolicyParsingException.cs" />
+    <None Include="Files\GroupPolicy\Exceptions\PolicySchemaValidationException.cs" />
+    <None Include="Files\GroupPolicy\Exceptions\PolicyUnexpectedElementException.cs" />
+    <None Include="Files\GroupPolicy\Utilities\XmlParserUtilities.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PolicyPlus.Domain\PolicyPlus.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Files\GroupPolicy\Schema\BaseTypes.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="Files\GroupPolicy\Schema\PolicyDefinitionFiles.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="Files\GroupPolicy\Schema\PolicyDefinitions.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+
 </Project>

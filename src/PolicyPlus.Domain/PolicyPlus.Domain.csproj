@@ -6,4 +6,34 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Policy\Definition\Model\IPolicyDefinitionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\IPolicyDefinitionResourcesBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\IPolicyDefinitionsBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\IPolicyNamespacesBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\IPolicyPresentationBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\ISupportedMajorVersionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\ISupportedOnDefinitionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\ISupportedOnTableBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\ISupportedProductBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\PolicyDefinitionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\PolicyDefinitionResourcesBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\PolicyDefinitionsBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\PolicyNamespacesBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\PolicyPresentationBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\SupportedMajorVersionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\SupportedMinorVersionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\SupportedOnDefinitionBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\SupportedOnTableBuilder.cs" />
+    <Compile Remove="Policy\Definition\Model\SupportedProductBuilder.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Policy\Configuration\" />
+    <Folder Include="Policy\Definition\Builders\Presentation\Elements\" />
+    <Folder Include="Policy\Definition\Builders\Presentation\Localization\" />
+    <Folder Include="Policy\Definition\Builders\References\" />
+    <Folder Include="Policy\Definition\Validators\" />
+  </ItemGroup>
+
 </Project>

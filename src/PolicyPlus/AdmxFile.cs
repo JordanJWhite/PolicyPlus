@@ -1,408 +1,628 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Xml;
 
-namespace PolicyPlus
+namespace PolicyPlus;
+
+/// <summary>
+///     Represents an ADMX (Administrative Template XML) file that defines policy settings
+/// </summary>
+public class AdmxFile
 {
-    public class AdmxFile
+    private AdmxFile() { }
+
+    /// <summary>
+    ///     Loads an ADMX file from the specified path
+    /// </summary>
+    /// <param name="filePath">Path to the ADMX file</param>
+    /// <returns>A populated AdmxFile object</returns>
+    public static AdmxFile Load(string filePath)
     {
-        public string SourceFile;
-        public string AdmxNamespace;
-        public string SupersededAdm;
-        public decimal MinAdmlVersion;
-        public Dictionary<string, string> Prefixes = new Dictionary<string, string>();
-        public List<AdmxProduct> Products = new List<AdmxProduct>();
-        public List<AdmxSupportDefinition> SupportedOnDefinitions = new List<AdmxSupportDefinition>();
-        public List<AdmxCategory> Categories = new List<AdmxCategory>();
-        public List<AdmxPolicy> Policies = new List<AdmxPolicy>();
-        private AdmxFile()
+        // ADMX documentation: https://technet.microsoft.com/en-us/library/cc772138(v=ws.10).aspx
+        var admx = new AdmxFile
         {
-        }
-        public static AdmxFile Load(string File)
+            SourceFile = filePath
+        };
+
+        var xmlDoc = new XmlDocument();
+        xmlDoc.Load(filePath);
+
+        var policyDefinitions = xmlDoc.GetElementsByTagName("policyDefinitions")[0];
+
+        foreach (XmlNode child in policyDefinitions.ChildNodes)
         {
-            // ADMX documentation: https://technet.microsoft.com/en-us/library/cc772138(v=ws.10).aspx
-            var admx = new AdmxFile();
-            admx.SourceFile = File;
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(File);
-            var policyDefinitions = xmlDoc.GetElementsByTagName("policyDefinitions")[0];
-            foreach (XmlNode child in policyDefinitions.ChildNodes)
+            switch (child.LocalName ?? "")
             {
-                switch (child.LocalName ?? "")
-                {
-                    case "policyNamespaces": // Referenced namespaces and current namespace
-                        {
-                            foreach (XmlNode policyNamespace in child.ChildNodes)
-                            {
-                                string prefix = policyNamespace.Attributes["prefix"].Value;
-                                string fqNamespace = policyNamespace.Attributes["namespace"].Value;
-                                if (policyNamespace.LocalName == "target")
-                                    admx.AdmxNamespace = fqNamespace;
-                                admx.Prefixes.Add(prefix, fqNamespace);
-                            }
+                case "policyNamespaces":
+                    ProcessPolicyNamespaces(child, admx);
 
-                            break;
-                        }
-                    case "supersededAdm": // The ADM file that this ADMX supersedes
-                        {
-                            admx.SupersededAdm = child.Attributes["fileName"].Value;
-                            break;
-                        }
-                    case "resources": // Minimum required version
-                        {
-                            admx.MinAdmlVersion = decimal.Parse(child.Attributes["minRequiredRevision"].Value, System.Globalization.CultureInfo.InvariantCulture);
-                            break;
-                        }
-                    case "supportedOn": // Support definitions
-                        {
-                            foreach (XmlNode supportInfo in child.ChildNodes)
-                            {
-                                if (supportInfo.LocalName == "definitions")
-                                {
-                                    foreach (XmlNode supportDef in supportInfo.ChildNodes)
-                                    {
-                                        if (supportDef.LocalName != "definition")
-                                            continue;
-                                        var definition = new AdmxSupportDefinition();
-                                        definition.ID = supportDef.Attributes["name"].Value;
-                                        definition.DisplayCode = supportDef.Attributes["displayName"].Value;
-                                        definition.Logic = AdmxSupportLogicType.Blank;
-                                        foreach (XmlNode logicElement in supportDef.ChildNodes)
-                                        {
-                                            bool canLoad = true;
-                                            if (logicElement.LocalName == "or")
-                                            {
-                                                definition.Logic = AdmxSupportLogicType.AnyOf;
-                                            }
-                                            else if (logicElement.LocalName == "and")
-                                            {
-                                                definition.Logic = AdmxSupportLogicType.AllOf;
-                                            }
-                                            else
-                                            {
-                                                canLoad = false;
-                                            }
-                                            if (canLoad)
-                                            {
-                                                definition.Entries = new List<AdmxSupportEntry>();
-                                                foreach (XmlNode conditionElement in logicElement.ChildNodes)
-                                                {
-                                                    if (conditionElement.LocalName == "reference")
-                                                    {
-                                                        string product = conditionElement.Attributes["ref"].Value;
-                                                        definition.Entries.Add(new AdmxSupportEntry() { ProductID = product, IsRange = false });
-                                                    }
-                                                    else if (conditionElement.LocalName == "range")
-                                                    {
-                                                        var entry = new AdmxSupportEntry() { IsRange = true };
-                                                        entry.ProductID = conditionElement.Attributes["ref"].Value;
-                                                        var maxVerAttr = conditionElement.Attributes["maxVersionIndex"];
-                                                        if (maxVerAttr is not null)
-                                                            entry.MaxVersion = int.Parse(maxVerAttr.Value);
-                                                        var minVerAttr = conditionElement.Attributes["minVersionIndex"];
-                                                        if (minVerAttr is not null)
-                                                            entry.MinVersion = int.Parse(minVerAttr.Value);
-                                                        definition.Entries.Add(entry);
-                                                    }
-                                                }
-                                                break;
-                                            }
-                                        }
-                                        definition.DefinedIn = admx;
-                                        admx.SupportedOnDefinitions.Add(definition);
-                                    }
-                                }
-                                else if (supportInfo.LocalName == "products") // Product definitions
-                                {
-                                    LoadProductsRecursively(supportInfo, "product", null, admx); // Start the recursive load
-                                }
-                            }
+                    break;
 
-                            break;
-                        }
-                    case "categories": // Categories
-                        {
-                            foreach (XmlNode categoryElement in child.ChildNodes)
-                            {
-                                if (categoryElement.LocalName != "category")
-                                    continue;
-                                var category = new AdmxCategory();
-                                category.ID = categoryElement.Attributes["name"].Value;
-                                category.DisplayCode = categoryElement.Attributes["displayName"].Value;
-                                category.ExplainCode = categoryElement.AttributeOrNull("explainText");
-                                if (categoryElement.HasChildNodes)
-                                {
-                                    var parentCatElement = categoryElement["parentCategory"];
-                                    category.ParentID = parentCatElement.Attributes["ref"].Value;
-                                }
-                                category.DefinedIn = admx;
-                                admx.Categories.Add(category);
-                            }
+                case "supersededAdm":
+                    admx.SupersededAdm = child.Attributes["fileName"]?.Value ?? string.Empty;
 
-                            break;
-                        }
-                    case "policies": // Policy settings
-                        {
-                            PolicyRegistryValue loadRegItem(XmlNode Node)
-                            {
-                                var regItem = new PolicyRegistryValue();
-                                foreach (XmlNode subElement in Node.ChildNodes)
-                                {
-                                    if (subElement.LocalName == "delete")
-                                    {
-                                        regItem.RegistryType = PolicyRegistryValueType.Delete;
-                                        break;
-                                    }
-                                    else if (subElement.LocalName == "decimal")
-                                    {
-                                        regItem.RegistryType = PolicyRegistryValueType.Numeric;
-                                        regItem.NumberValue = Convert.ToUInt32(subElement.Attributes["value"].Value);
-                                        break;
-                                    }
-                                    else if (subElement.LocalName == "string")
-                                    {
-                                        regItem.RegistryType = PolicyRegistryValueType.Text;
-                                        regItem.StringValue = subElement.InnerText;
-                                        break;
-                                    }
-                                }
-                                return regItem;
-                            };
-                            PolicyRegistrySingleList loadOneRegList(XmlNode Node)
-                            {
-                                var singleList = new PolicyRegistrySingleList();
-                                singleList.DefaultRegistryKey = Node.AttributeOrNull("defaultKey");
-                                singleList.AffectedValues = new List<PolicyRegistryListEntry>();
-                                foreach (XmlNode itemElement in Node.ChildNodes)
-                                {
-                                    if (itemElement.LocalName != "item")
-                                        continue;
-                                    var listEntry = new PolicyRegistryListEntry();
-                                    listEntry.RegistryValue = itemElement.Attributes["valueName"].Value;
-                                    listEntry.RegistryKey = itemElement.AttributeOrNull("key");
-                                    foreach (XmlNode valElement in itemElement.ChildNodes)
-                                    {
-                                        if (valElement.LocalName == "value")
-                                        {
-                                            listEntry.Value = loadRegItem(valElement);
-                                            break;
-                                        }
-                                    }
-                                    singleList.AffectedValues.Add(listEntry);
-                                }
-                                return singleList;
-                            };
-                            PolicyRegistryList loadOnOffValList(string OnValueName, string OffValueName, string OnListName, string OffListName, XmlNode Node)
-                            {
-                                var regList = new PolicyRegistryList();
-                                foreach (XmlNode subElement in Node.ChildNodes)
-                                {
-                                    if ((subElement.Name ?? "") == (OnValueName ?? ""))
-                                    {
-                                        regList.OnValue = loadRegItem(subElement);
-                                    }
-                                    else if ((subElement.Name ?? "") == (OffValueName ?? ""))
-                                    {
-                                        regList.OffValue = loadRegItem(subElement);
-                                    }
-                                    else if ((subElement.Name ?? "") == (OnListName ?? ""))
-                                    {
-                                        regList.OnValueList = loadOneRegList(subElement);
-                                    }
-                                    else if ((subElement.Name ?? "") == (OffListName ?? ""))
-                                    {
-                                        regList.OffValueList = loadOneRegList(subElement);
-                                    }
-                                }
-                                return regList;
-                            };
-                            foreach (XmlNode polElement in child.ChildNodes)
-                            {
-                                if (polElement.LocalName != "policy")
-                                    continue;
-                                var policy = new AdmxPolicy();
-                                policy.ID = polElement.Attributes["name"].Value;
-                                policy.DefinedIn = admx;
-                                policy.DisplayCode = polElement.Attributes["displayName"].Value;
-                                policy.RegistryKey = polElement.Attributes["key"].Value;
-                                string polClass = polElement.Attributes["class"].Value;
-                                switch (polClass ?? "")
-                                {
-                                    case "Machine":
-                                        {
-                                            policy.Section = AdmxPolicySection.Machine;
-                                            break;
-                                        }
-                                    case "User":
-                                        {
-                                            policy.Section = AdmxPolicySection.User;
-                                            break;
-                                        }
+                    break;
 
-                                    default:
-                                        {
-                                            policy.Section = AdmxPolicySection.Both;
-                                            break;
-                                        }
-                                }
-                                policy.ExplainCode = polElement.AttributeOrNull("explainText");
-                                policy.PresentationID = polElement.AttributeOrNull("presentation");
-                                policy.ClientExtension = polElement.AttributeOrNull("clientExtension");
-                                policy.RegistryValue = polElement.AttributeOrNull("valueName");
-                                policy.AffectedValues = loadOnOffValList("enabledValue", "disabledValue", "enabledList", "disabledList", polElement);
-                                foreach (XmlNode polInfo in polElement.ChildNodes)
-                                {
-                                    switch (polInfo.LocalName ?? "")
-                                    {
-                                        case "parentCategory":
-                                            {
-                                                policy.CategoryID = polInfo.Attributes["ref"].Value;
-                                                break;
-                                            }
-                                        case "supportedOn":
-                                            {
-                                                policy.SupportedCode = polInfo.Attributes["ref"].Value;
-                                                break;
-                                            }
-                                        case "elements":
-                                            {
-                                                policy.Elements = new List<PolicyElement>();
-                                                foreach (XmlNode uiElement in polInfo.ChildNodes)
-                                                {
-                                                    PolicyElement entry = null;
-                                                    switch (uiElement.LocalName ?? "")
-                                                    {
-                                                        case "decimal":
-                                                            {
-                                                                var decimalEntry = new DecimalPolicyElement();
-                                                                decimalEntry.Minimum = Convert.ToUInt32(uiElement.AttributeOrDefault("minValue", 0));
-                                                                decimalEntry.Maximum = Convert.ToUInt32(uiElement.AttributeOrDefault("maxValue", uint.MaxValue));
-                                                                decimalEntry.NoOverwrite = Convert.ToBoolean(uiElement.AttributeOrDefault("soft", false));
-                                                                decimalEntry.StoreAsText = Convert.ToBoolean(uiElement.AttributeOrDefault("storeAsText", false));
-                                                                entry = decimalEntry;
-                                                                break;
-                                                            }
-                                                        case "boolean":
-                                                            {
-                                                                var boolEntry = new BooleanPolicyElement();
-                                                                boolEntry.AffectedRegistry = loadOnOffValList("trueValue", "falseValue", "trueList", "falseList", uiElement);
-                                                                entry = boolEntry;
-                                                                break;
-                                                            }
-                                                        case "text":
-                                                            {
-                                                                var textEntry = new TextPolicyElement();
-                                                                textEntry.MaxLength = Convert.ToInt32(uiElement.AttributeOrDefault("maxLength", 255));
-                                                                textEntry.Required = Convert.ToBoolean(uiElement.AttributeOrDefault("required", false));
-                                                                textEntry.RegExpandSz = Convert.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
-                                                                textEntry.NoOverwrite = Convert.ToBoolean(uiElement.AttributeOrDefault("soft", false));
-                                                                entry = textEntry;
-                                                                break;
-                                                            }
-                                                        case "list":
-                                                            {
-                                                                var listEntry = new ListPolicyElement();
-                                                                listEntry.NoPurgeOthers = Convert.ToBoolean(uiElement.AttributeOrDefault("additive", false));
-                                                                listEntry.RegExpandSz = Convert.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
-                                                                listEntry.UserProvidesNames = Convert.ToBoolean(uiElement.AttributeOrDefault("explicitValue", false));
-                                                                listEntry.HasPrefix = uiElement.Attributes["valuePrefix"] is not null;
-                                                                listEntry.RegistryValue = uiElement.AttributeOrNull("valuePrefix");
-                                                                entry = listEntry;
-                                                                break;
-                                                            }
-                                                        case "enum":
-                                                            {
-                                                                var enumEntry = new EnumPolicyElement();
-                                                                enumEntry.Required = Convert.ToBoolean(uiElement.AttributeOrDefault("required", false));
-                                                                enumEntry.Items = new List<EnumPolicyElementItem>();
-                                                                foreach (XmlNode itemElement in uiElement.ChildNodes)
-                                                                {
-                                                                    if (itemElement.LocalName == "item")
-                                                                    {
-                                                                        var enumItem = new EnumPolicyElementItem();
-                                                                        enumItem.DisplayCode = itemElement.Attributes["displayName"].Value;
-                                                                        foreach (XmlNode valElement in itemElement.ChildNodes)
-                                                                        {
-                                                                            if (valElement.LocalName == "value")
-                                                                            {
-                                                                                enumItem.Value = loadRegItem(valElement);
-                                                                            }
-                                                                            else if (valElement.LocalName == "valueList")
-                                                                            {
-                                                                                enumItem.ValueList = loadOneRegList(valElement);
-                                                                            }
-                                                                        }
-                                                                        enumEntry.Items.Add(enumItem);
-                                                                    }
-                                                                }
-                                                                entry = enumEntry;
-                                                                break;
-                                                            }
-                                                        case "multiText":
-                                                            {
-                                                                entry = new MultiTextPolicyElement();
-                                                                break;
-                                                            }
-                                                    }
-                                                    if (entry is not null)
-                                                    {
-                                                        entry.ClientExtension = uiElement.AttributeOrNull("clientExtension");
-                                                        entry.RegistryKey = uiElement.AttributeOrNull("key");
-                                                        if (string.IsNullOrEmpty(entry.RegistryValue))
-                                                            entry.RegistryValue = uiElement.AttributeOrNull("valueName");
-                                                        entry.ID = uiElement.Attributes["id"].Value;
-                                                        entry.ElementType = uiElement.LocalName;
-                                                        policy.Elements.Add(entry);
-                                                    }
-                                                }
+                case "resources":
+                    admx.MinAdmlVersion = decimal.Parse(
+                        child.Attributes["minRequiredRevision"]?.Value ?? "0",
+                        CultureInfo.InvariantCulture
+                    );
 
-                                                break;
-                                            }
-                                    }
-                                }
-                                admx.Policies.Add(policy);
-                            }
+                    break;
 
-                            break;
-                        }
-                }
+                case "supportedOn":
+                    ProcessSupportedOn(child, admx);
+
+                    break;
+
+                case "categories":
+                    ProcessCategories(child, admx);
+
+                    break;
+
+                case "policies":
+                    ProcessPolicies(child, admx);
+
+                    break;
             }
-            return admx;
         }
 
-        private static void LoadProductsRecursively(XmlNode node, string childTagName, AdmxProduct parent, AdmxFile admx)
+        return admx;
+    }
+
+    #region Properties
+
+    public string                      AdmxNamespace          { get; private set; } = string.Empty;
+    public List<AdmxCategory>          Categories             { get; }              = new();
+    public decimal                     MinAdmlVersion         { get; private set; }
+    public List<AdmxPolicy>            Policies               { get; }              = new();
+    public Dictionary<string, string>  Prefixes               { get; }              = new();
+    public List<AdmxProduct>           Products               { get; }              = new();
+    public string                      SourceFile             { get; private set; } = string.Empty;
+    public string                      SupersededAdm          { get; private set; } = string.Empty;
+    public List<AdmxSupportDefinition> SupportedOnDefinitions { get; }              = new();
+
+    #endregion
+
+    #region Helper Methods for Processing ADMX Sections
+
+    /// <summary>
+    ///     Process the policy namespaces section of the ADMX file
+    /// </summary>
+    private static void ProcessPolicyNamespaces(XmlNode policyNamespacesNode, AdmxFile admx)
+    {
+        foreach (XmlNode policyNamespace in policyNamespacesNode.ChildNodes)
         {
-            foreach (XmlNode subproductElement in node.ChildNodes)
+            if (policyNamespace.Attributes?["prefix"]   == null ||
+                policyNamespace.Attributes["namespace"] == null)
+                continue;
+
+            var prefix      = policyNamespace.Attributes["prefix"].Value;
+            var fqNamespace = policyNamespace.Attributes["namespace"].Value;
+
+            if (policyNamespace.LocalName == "target")
+                admx.AdmxNamespace = fqNamespace;
+
+            admx.Prefixes.Add(prefix, fqNamespace);
+        }
+    }
+
+    /// <summary>
+    ///     Process the supported products and definitions section of the ADMX file
+    /// </summary>
+    private static void ProcessSupportedOn(XmlNode supportedOnNode, AdmxFile admx)
+    {
+        var items = new List<int>();
+
+        var someItems = items.Where(i => i == 5 && 2 != 60)
+                             .Select(i => i     + 2)
+                             .Select(i => i * 4 + 3 * 666)
+                             .Select(i => i * 2)
+                             .Select(i => i * 4)
+                             .Select(i => i * 2)
+                             .Select(i => i * 4)
+                             .Select(i => i * 2);
+
+        foreach (XmlNode supportInfo in supportedOnNode.ChildNodes)
+        {
+            if (supportInfo.LocalName == "definitions")
+                ProcessSupportDefinitions(supportInfo, admx);
+            else if (supportInfo.LocalName == "products")
             {
-                if ((subproductElement.LocalName ?? "") != (childTagName ?? ""))
-                    continue;
-
-                var product = new AdmxProduct();
-                product.ID = subproductElement.Attributes["name"].Value;
-                product.DisplayCode = subproductElement.Attributes["displayName"].Value;
-
-                if (parent is not null)
-                    product.Version = Convert.ToInt32(subproductElement.Attributes["versionIndex"].Value);
-
-                product.Parent = parent;
-                product.DefinedIn = admx;
-                admx.Products.Add(product);
-
-                if (parent is null)
-                {
-                    product.Type = AdmxProductType.Product;
-                    LoadProductsRecursively(subproductElement, "majorVersion", product, admx);
-                }
-                else if (parent.Parent is null)
-                {
-                    product.Type = AdmxProductType.MajorRevision;
-                    LoadProductsRecursively(subproductElement, "minorVersion", product, admx);
-                }
-                else
-                {
-                    product.Type = AdmxProductType.MinorRevision;
-                }
+                // Start the recursive load of product definitions
+                LoadProductsRecursively(supportInfo, "product", null, admx);
             }
         }
     }
+
+    /// <summary>
+    ///     Process the support definitions section of the ADMX file
+    /// </summary>
+    private static void ProcessSupportDefinitions(XmlNode definitionsNode, AdmxFile admx)
+    {
+        foreach (XmlNode supportDef in definitionsNode.ChildNodes)
+        {
+            if (supportDef.LocalName != "definition")
+                continue;
+
+            var definition = new AdmxSupportDefinition
+            {
+                ID          = supportDef.GetAttributeValue("name"),
+                DisplayCode = supportDef.GetAttributeValue("displayName"),
+                Logic       = AdmxSupportLogicType.Blank,
+                DefinedIn   = admx
+            };
+
+            ProcessSupportLogic(supportDef, definition);
+            admx.SupportedOnDefinitions.Add(definition);
+        }
+    }
+
+    /// <summary>
+    ///     Process the logical conditions (AND/OR) for support definitions
+    /// </summary>
+    private static void ProcessSupportLogic(XmlNode supportDef, AdmxSupportDefinition definition)
+    {
+        foreach (XmlNode logicElement in supportDef.ChildNodes)
+        {
+            var logicType = logicElement.LocalName switch
+            {
+                "or"  => AdmxSupportLogicType.AnyOf,
+                "and" => AdmxSupportLogicType.AllOf,
+                _     => AdmxSupportLogicType.Blank
+            };
+
+            if (logicType == AdmxSupportLogicType.Blank)
+                continue;
+
+            definition.Logic   = logicType;
+            definition.Entries = new List<AdmxSupportEntry>();
+
+            foreach (XmlNode conditionElement in logicElement.ChildNodes)
+            {
+                if (conditionElement.LocalName == "reference")
+                {
+                    var product = conditionElement.GetAttributeValue("ref");
+                    definition.Entries.Add(new AdmxSupportEntry { ProductID = product, IsRange = false });
+                }
+                else if (conditionElement.LocalName == "range")
+                {
+                    var entry = new AdmxSupportEntry { IsRange = true };
+                    entry.ProductID = conditionElement.GetAttributeValue("ref");
+
+                    var maxVerAttr = conditionElement.Attributes?["maxVersionIndex"];
+
+                    if (maxVerAttr != null)
+                        entry.MaxVersion = int.Parse(maxVerAttr.Value);
+
+                    var minVerAttr = conditionElement.Attributes?["minVersionIndex"];
+
+                    if (minVerAttr != null)
+                        entry.MinVersion = int.Parse(minVerAttr.Value);
+
+                    definition.Entries.Add(entry);
+                }
+            }
+
+            // We found a valid logic element, so we can break
+            break;
+        }
+    }
+
+    /// <summary>
+    ///     Process the categories section of the ADMX file
+    /// </summary>
+    private static void ProcessCategories(XmlNode categoriesNode, AdmxFile admx)
+    {
+        foreach (XmlNode categoryElement in categoriesNode.ChildNodes)
+        {
+            if (categoryElement.LocalName != "category")
+                continue;
+
+            var category = new AdmxCategory
+            {
+                ID          = categoryElement.GetAttributeValue("name"),
+                DisplayCode = categoryElement.GetAttributeValue("displayName"),
+                ExplainCode = categoryElement.GetAttributeOrNull("explainText"),
+                DefinedIn   = admx
+            };
+
+            if (categoryElement.HasChildNodes)
+            {
+                var parentCatElement = categoryElement["parentCategory"];
+
+                if (parentCatElement != null)
+                    category.ParentID = parentCatElement.GetAttributeValue("ref");
+            }
+
+            admx.Categories.Add(category);
+        }
+    }
+
+    /// <summary>
+    ///     Process the policies section of the ADMX file
+    /// </summary>
+    private static void ProcessPolicies(XmlNode policiesNode, AdmxFile admx)
+    {
+        var registryValueParser = new PolicyRegistryValueParser();
+
+        foreach (XmlNode polElement in policiesNode.ChildNodes)
+        {
+            if (polElement.LocalName != "policy")
+                continue;
+
+            var policy = CreatePolicyFromXmlNode(polElement, admx, registryValueParser);
+            admx.Policies.Add(policy);
+        }
+    }
+
+    /// <summary>
+    ///     Create a policy object from an XML node
+    /// </summary>
+    private static AdmxPolicy CreatePolicyFromXmlNode(XmlNode polElement, AdmxFile admx, PolicyRegistryValueParser registryValueParser)
+    {
+        var policy = new AdmxPolicy
+        {
+            ID              = polElement.GetAttributeValue("name"),
+            DefinedIn       = admx,
+            DisplayCode     = polElement.GetAttributeValue("displayName"),
+            RegistryKey     = polElement.GetAttributeValue("key"),
+            ExplainCode     = polElement.GetAttributeOrNull("explainText"),
+            PresentationID  = polElement.GetAttributeOrNull("presentation"),
+            ClientExtension = polElement.GetAttributeOrNull("clientExtension"),
+            RegistryValue   = polElement.GetAttributeOrNull("valueName")
+        };
+
+        // Set policy section based on class attribute
+        policy.Section = polElement.GetAttributeValue("class") switch
+        {
+            "Machine" => AdmxPolicySection.Machine,
+            "User"    => AdmxPolicySection.User,
+            _         => AdmxPolicySection.Both
+        };
+
+        // Process affected registry values
+        policy.AffectedValues = registryValueParser.LoadOnOffValueList(
+            "enabledValue",
+            "disabledValue",
+            "enabledList",
+            "disabledList",
+            polElement
+        );
+
+        // Process policy child nodes (parentCategory, supportedOn, elements)
+        foreach (XmlNode polInfo in polElement.ChildNodes)
+        {
+            switch (polInfo.LocalName)
+            {
+                case "parentCategory":
+                    policy.CategoryID = polInfo.GetAttributeValue("ref");
+
+                    break;
+
+                case "supportedOn":
+                    policy.SupportedCode = polInfo.GetAttributeValue("ref");
+
+                    break;
+
+                case "elements":
+                    policy.Elements = ProcessPolicyElements(polInfo, registryValueParser);
+
+                    break;
+            }
+        }
+
+        return policy;
+    }
+
+    /// <summary>
+    ///     Process policy UI elements
+    /// </summary>
+    private static List<PolicyElement> ProcessPolicyElements(XmlNode elementsNode, PolicyRegistryValueParser registryValueParser)
+    {
+        var elements = new List<PolicyElement>();
+
+        foreach (XmlNode uiElement in elementsNode.ChildNodes)
+        {
+            PolicyElement entry = uiElement.LocalName switch
+            {
+                "decimal"   => CreateDecimalElement(uiElement),
+                "boolean"   => CreateBooleanElement(uiElement, registryValueParser),
+                "text"      => CreateTextElement(uiElement),
+                "list"      => CreateListElement(uiElement),
+                "enum"      => CreateEnumElement(uiElement, registryValueParser),
+                "multiText" => new MultiTextPolicyElement(),
+                _           => null
+            };
+
+            if (entry == null)
+                continue;
+
+            entry.ClientExtension = uiElement.GetAttributeOrNull("clientExtension");
+            entry.RegistryKey     = uiElement.GetAttributeOrNull("key");
+
+            if (string.IsNullOrEmpty(entry.RegistryValue))
+                entry.RegistryValue = uiElement.GetAttributeOrNull("valueName");
+
+            entry.ID          = uiElement.GetAttributeValue("id");
+            entry.ElementType = uiElement.LocalName;
+
+            elements.Add(entry);
+        }
+
+        return elements;
+    }
+
+    /// <summary>
+    ///     Create a decimal policy element from an XML node
+    /// </summary>
+    private static DecimalPolicyElement CreateDecimalElement(XmlNode uiElement) =>
+        new()
+        {
+            Minimum     = Convert.ToUInt32(uiElement.GetAttributeOrDefault("minValue",     "0")),
+            Maximum     = Convert.ToUInt32(uiElement.GetAttributeOrDefault("maxValue",     uint.MaxValue.ToString())),
+            NoOverwrite = Convert.ToBoolean(uiElement.GetAttributeOrDefault("soft",        "false")),
+            StoreAsText = Convert.ToBoolean(uiElement.GetAttributeOrDefault("storeAsText", "false"))
+        };
+
+    /// <summary>
+    ///     Create a boolean policy element from an XML node
+    /// </summary>
+    private static BooleanPolicyElement CreateBooleanElement(XmlNode uiElement, PolicyRegistryValueParser registryValueParser)
+    {
+        var boolEntry = new BooleanPolicyElement
+        {
+            AffectedRegistry = registryValueParser.LoadOnOffValueList("trueValue", "falseValue", "trueList", "falseList", uiElement)
+        };
+
+        return boolEntry;
+    }
+
+    /// <summary>
+    ///     Create a text policy element from an XML node
+    /// </summary>
+    private static TextPolicyElement CreateTextElement(XmlNode uiElement) =>
+        new()
+        {
+            MaxLength   = Convert.ToInt32(uiElement.GetAttributeOrDefault("maxLength",    "255")),
+            Required    = Convert.ToBoolean(uiElement.GetAttributeOrDefault("required",   "false")),
+            RegExpandSz = Convert.ToBoolean(uiElement.GetAttributeOrDefault("expandable", "false")),
+            NoOverwrite = Convert.ToBoolean(uiElement.GetAttributeOrDefault("soft",       "false"))
+        };
+
+    /// <summary>
+    ///     Create a list policy element from an XML node
+    /// </summary>
+    private static ListPolicyElement CreateListElement(XmlNode uiElement)
+    {
+        var listEntry = new ListPolicyElement
+        {
+            NoPurgeOthers     = Convert.ToBoolean(uiElement.GetAttributeOrDefault("additive",      "false")),
+            RegExpandSz       = Convert.ToBoolean(uiElement.GetAttributeOrDefault("expandable",    "false")),
+            UserProvidesNames = Convert.ToBoolean(uiElement.GetAttributeOrDefault("explicitValue", "false")),
+            HasPrefix         = uiElement.Attributes?["valuePrefix"] != null,
+            RegistryValue     = uiElement.GetAttributeOrNull("valuePrefix")
+        };
+
+        return listEntry;
+    }
+
+    /// <summary>
+    ///     Create an enum policy element from an XML node
+    /// </summary>
+    private static EnumPolicyElement CreateEnumElement(XmlNode uiElement, PolicyRegistryValueParser registryValueParser)
+    {
+        var enumEntry = new EnumPolicyElement
+        {
+            Required = Convert.ToBoolean(uiElement.GetAttributeOrDefault("required", "false")),
+            Items    = new List<EnumPolicyElementItem>()
+        };
+
+        foreach (XmlNode itemElement in uiElement.ChildNodes)
+        {
+            if (itemElement.LocalName != "item")
+                continue;
+
+            var enumItem = new EnumPolicyElementItem
+            {
+                DisplayCode = itemElement.GetAttributeValue("displayName")
+            };
+
+            foreach (XmlNode valElement in itemElement.ChildNodes)
+            {
+                if (valElement.LocalName == "value")
+                    enumItem.Value = registryValueParser.LoadRegistryValue(valElement);
+                else if (valElement.LocalName == "valueList")
+                    enumItem.ValueList = registryValueParser.LoadSingleRegistryList(valElement);
+            }
+
+            enumEntry.Items.Add(enumItem);
+        }
+
+        return enumEntry;
+    }
+
+    /// <summary>
+    ///     Recursively load product definitions
+    /// </summary>
+    private static void LoadProductsRecursively(XmlNode node, string childTagName, AdmxProduct parent, AdmxFile admx)
+    {
+        foreach (XmlNode subproductElement in node.ChildNodes)
+        {
+            if ((subproductElement.LocalName ?? "") != (childTagName ?? ""))
+                continue;
+
+            var product = new AdmxProduct
+            {
+                ID          = subproductElement.GetAttributeValue("name"),
+                DisplayCode = subproductElement.GetAttributeValue("displayName"),
+                Parent      = parent,
+                DefinedIn   = admx
+            };
+
+            if (parent != null)
+                product.Version = Convert.ToInt32(subproductElement.GetAttributeValue("versionIndex"));
+
+            admx.Products.Add(product);
+
+            if (parent == null)
+            {
+                product.Type = AdmxProductType.Product;
+                LoadProductsRecursively(subproductElement, "majorVersion", product, admx);
+            }
+            else if (parent.Parent == null)
+            {
+                product.Type = AdmxProductType.MajorRevision;
+                LoadProductsRecursively(subproductElement, "minorVersion", product, admx);
+            }
+            else
+                product.Type = AdmxProductType.MinorRevision;
+        }
+    }
+
+    #endregion
+}
+
+/// <summary>
+///     Helper class for parsing registry values from XML nodes
+/// </summary>
+internal class PolicyRegistryValueParser
+{
+    /// <summary>
+    ///     Load a registry value from an XML node
+    /// </summary>
+    public PolicyRegistryValue LoadRegistryValue(XmlNode node)
+    {
+        var regItem = new PolicyRegistryValue();
+
+        foreach (XmlNode subElement in node.ChildNodes)
+        {
+            if (subElement.LocalName == "delete")
+            {
+                regItem.RegistryType = PolicyRegistryValueType.Delete;
+
+                break;
+            }
+
+            if (subElement.LocalName == "decimal")
+            {
+                regItem.RegistryType = PolicyRegistryValueType.Numeric;
+                regItem.NumberValue  = Convert.ToUInt32(subElement.GetAttributeValue("value"));
+
+                break;
+            }
+
+            if (subElement.LocalName != "string")
+                continue;
+
+            regItem.RegistryType = PolicyRegistryValueType.Text;
+            regItem.StringValue  = subElement.InnerText;
+
+            break;
+        }
+
+        return regItem;
+    }
+
+    /// <summary>
+    ///     Load a registry list from an XML node
+    /// </summary>
+    public PolicyRegistrySingleList LoadSingleRegistryList(XmlNode node)
+    {
+        var singleList = new PolicyRegistrySingleList
+        {
+            DefaultRegistryKey = node.GetAttributeOrNull("defaultKey"),
+            AffectedValues     = new List<PolicyRegistryListEntry>()
+        };
+
+        foreach (XmlNode itemElement in node.ChildNodes)
+        {
+            if (itemElement.LocalName != "item")
+                continue;
+
+            var listEntry = new PolicyRegistryListEntry
+            {
+                RegistryValue = itemElement.GetAttributeValue("valueName"),
+                RegistryKey   = itemElement.GetAttributeOrNull("key")
+            };
+
+            foreach (XmlNode valElement in itemElement.ChildNodes)
+            {
+                if (valElement.LocalName != "value")
+                    continue;
+
+                listEntry.Value = LoadRegistryValue(valElement);
+
+                break;
+            }
+
+            singleList.AffectedValues.Add(listEntry);
+        }
+
+        return singleList;
+    }
+
+    /// <summary>
+    ///     Load registry values for on/off settings
+    /// </summary>
+    public PolicyRegistryList LoadOnOffValueList(
+        string  onValueName,
+        string  offValueName,
+        string  onListName,
+        string  offListName,
+        XmlNode node
+    )
+    {
+        var regList = new PolicyRegistryList();
+
+        foreach (XmlNode subElement in node.ChildNodes)
+        {
+            if (string.Equals(subElement.Name ?? "", onValueName ?? "", StringComparison.OrdinalIgnoreCase))
+                regList.OnValue = LoadRegistryValue(subElement);
+
+            else if (string.Equals(subElement.Name ?? "", offValueName ?? "", StringComparison.OrdinalIgnoreCase))
+                regList.OffValue = LoadRegistryValue(subElement);
+
+            else if (string.Equals(subElement.Name ?? "", onListName ?? "", StringComparison.OrdinalIgnoreCase))
+                regList.OnValueList = LoadSingleRegistryList(subElement);
+
+            else if (string.Equals(subElement.Name ?? "", offListName ?? "", StringComparison.OrdinalIgnoreCase))
+                regList.OffValueList = LoadSingleRegistryList(subElement);
+        }
+
+        return regList;
+    }
+}
+
+/// <summary>
+///     Extension methods for XmlNode to simplify attribute access
+/// </summary>
+internal static class XmlNodeExtensions
+{
+    /// <summary>
+    ///     Get attribute value or throw if not found
+    /// </summary>
+    public static string GetAttributeValue(this XmlNode node, string attributeName)
+    {
+        var attribute = node.Attributes?[attributeName];
+
+        if (attribute == null)
+            throw new ArgumentException($"Required attribute '{attributeName}' not found on node '{node.Name}'");
+
+        return attribute.Value;
+    }
+
+    /// <summary>
+    ///     Get attribute value or return null if not found
+    /// </summary>
+    public static string GetAttributeOrNull(this XmlNode node, string attributeName) => node.Attributes?[attributeName]?.Value;
+
+    /// <summary>
+    ///     Get attribute value or return default if not found
+    /// </summary>
+    public static string GetAttributeOrDefault(this XmlNode node, string attributeName, string defaultValue) =>
+        node.Attributes?[attributeName]?.Value ?? defaultValue;
 }
