@@ -19,9 +19,6 @@ public interface IValueItemBuilder : IBuilder<ValueItem>
 /// </summary>
 public class ValueItemBuilder : BuilderBase<ValueItemBuilder, ValueItem>, IValueItemBuilder
 {
-    private bool _valueNameSet;
-    private bool _valueSet;
-
     public IValue? Value     { get; private set; }
     public string? Key       { get; private set; }
     public string? ValueName { get; private set; }
@@ -30,9 +27,7 @@ public class ValueItemBuilder : BuilderBase<ValueItemBuilder, ValueItem>, IValue
     {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
         EnsureNotBuilt(nameof(WithValue));
-
-        Value     = value;
-        _valueSet = true;
+        Value = value;
 
         return this;
     }
@@ -49,17 +44,15 @@ public class ValueItemBuilder : BuilderBase<ValueItemBuilder, ValueItem>, IValue
     {
         ArgumentNullException.ThrowIfNull(valueName, nameof(valueName));
         EnsureNotBuilt(nameof(WithValueName));
-
-        ValueName     = valueName;
-        _valueNameSet = true;
+        ValueName = valueName;
 
         return this;
     }
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<ValueItemBuilder, ValueItem>(
-            () => (nameof(ValueName), _valueNameSet),
-            () => (nameof(Value), _valueSet)
+            () => (nameof(ValueName), ValueName is not null),
+            () => (nameof(Value), Value is not null)
         );
 
     protected override ValueItem BuildCore() =>
@@ -75,8 +68,5 @@ public class ValueItemBuilder : BuilderBase<ValueItemBuilder, ValueItem>, IValue
         Value     = null;
         Key       = null;
         ValueName = null;
-
-        _valueSet     = false;
-        _valueNameSet = false;
     }
 }

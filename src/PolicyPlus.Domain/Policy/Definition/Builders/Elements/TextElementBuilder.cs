@@ -37,7 +37,6 @@ public class TextElementBuilder : BuilderBase<TextElementBuilder, TextElement>, 
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
-
         Id = id;
 
         return this;

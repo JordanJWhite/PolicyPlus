@@ -35,7 +35,6 @@ public class ListElementBuilder : BuilderBase<ListElementBuilder, ListElement>, 
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
-
         Id = id;
 
         return this;

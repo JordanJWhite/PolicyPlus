@@ -22,10 +22,11 @@ public interface IValueListBuilder : IBuilder<ValueList>
 /// </summary>
 public class ValueListBuilder : BuilderBase<ValueListBuilder, ValueList>, IValueListBuilder
 {
-    private readonly List<ValueItem> _items = [];
-    private          bool            _itemsSet;
+    private List<ValueItem>           _items = [];
+    private IReadOnlyList<ValueItem>? _itemsView;
+    private bool                      _itemsSet;
 
-    public IReadOnlyList<ValueItem> Items      => _items.AsReadOnly();
+    public IReadOnlyList<ValueItem> Items      => _itemsView ??= _items.AsReadOnly();
     public string?                  DefaultKey { get; private set; }
 
     public IValueListBuilder AddItem(ValueItem item)
@@ -117,8 +118,9 @@ public class ValueListBuilder : BuilderBase<ValueListBuilder, ValueList>, IValue
 
     protected override void ResetCore()
     {
-        _items.Clear();
         DefaultKey = null;
+        _items     = [];
+        _itemsView = null;
         _itemsSet  = false;
     }
 }

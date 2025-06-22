@@ -22,8 +22,6 @@ public interface IStringValueBuilder : IBuilder<StringValue>
 /// </summary>
 public class StringValueBuilder : BuilderBase<StringValueBuilder, StringValue>, IStringValueBuilder
 {
-    private bool _valueSet;
-
     /// <summary>
     ///     Gets the string value.
     /// </summary>
@@ -38,9 +36,7 @@ public class StringValueBuilder : BuilderBase<StringValueBuilder, StringValue>, 
     {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
         EnsureNotBuilt(nameof(WithValue));
-
-        Value     = value;
-        _valueSet = true;
+        Value = value;
 
         return this;
     }
@@ -49,7 +45,7 @@ public class StringValueBuilder : BuilderBase<StringValueBuilder, StringValue>, 
     ///     Validates that the required properties of the builder have been set before building.
     /// </summary>
     protected override void ValidateRequiredProperties() =>
-        BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<StringValueBuilder, StringValue>(() => (nameof(Value), _valueSet));
+        BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<StringValueBuilder, StringValue>(() => (nameof(Value), Value is not null));
 
     /// <summary>
     ///     Creates the StringValue instance.
@@ -64,9 +60,5 @@ public class StringValueBuilder : BuilderBase<StringValueBuilder, StringValue>, 
     /// <summary>
     ///     Resets the builder to its initial state.
     /// </summary>
-    protected override void ResetCore()
-    {
-        Value     = null;
-        _valueSet = false;
-    }
+    protected override void ResetCore() => Value = null;
 }

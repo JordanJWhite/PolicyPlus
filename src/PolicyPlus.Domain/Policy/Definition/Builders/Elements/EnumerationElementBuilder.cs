@@ -26,20 +26,21 @@ public interface IEnumerationElementBuilder : IBuilder<EnumerationElement>
 /// </summary>
 public class EnumerationElementBuilder : BuilderBase<EnumerationElementBuilder, EnumerationElement>, IEnumerationElementBuilder
 {
-    private readonly List<EnumerationItem> _items = [];
+    private List<EnumerationItem>           _items = [];
+    private IReadOnlyList<EnumerationItem>? _itemsView;
+    private bool                            _itemsSet;
 
     public string?                        Id              { get; private set; }
     public string?                        ClientExtension { get; private set; }
     public string?                        Key             { get; private set; }
     public string?                        ValueName       { get; private set; }
     public bool                           Required        { get; private set; }
-    public IReadOnlyList<EnumerationItem> Items           => _items.AsReadOnly();
+    public IReadOnlyList<EnumerationItem> Items           => _itemsView ??= _items.AsReadOnly();
 
     public IEnumerationElementBuilder WithId(string id)
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
-
         Id = id;
 
         return this;
@@ -83,6 +84,7 @@ public class EnumerationElementBuilder : BuilderBase<EnumerationElementBuilder, 
         EnsureNotBuilt(nameof(AddItem));
 
         _items.Add(item);
+        _itemsSet = true;
 
         return this;
     }
@@ -100,6 +102,8 @@ public class EnumerationElementBuilder : BuilderBase<EnumerationElementBuilder, 
             _items.Add(item);
         }
 
+        _itemsSet = true;
+
         return this;
     }
 
@@ -109,6 +113,7 @@ public class EnumerationElementBuilder : BuilderBase<EnumerationElementBuilder, 
         EnsureNotBuilt(nameof(RemoveItem));
 
         _items.Remove(item);
+        _itemsSet = _items.Count > 0;
 
         return this;
     }
@@ -126,20 +131,27 @@ public class EnumerationElementBuilder : BuilderBase<EnumerationElementBuilder, 
             _items.Remove(item);
         }
 
+        _itemsSet = _items.Count > 0;
+
         return this;
     }
 
     public IEnumerationElementBuilder ClearItems()
     {
         EnsureNotBuilt(nameof(ClearItems));
+
         _items.Clear();
+        _itemsSet = false;
 
         return this;
     }
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper
-           .ThrowIfRequiredPropertiesMissing<EnumerationElementBuilder, EnumerationElement>(() => (nameof(Id), Id is not null));
+           .ThrowIfRequiredPropertiesMissing<EnumerationElementBuilder, EnumerationElement>(
+                () => (nameof(Id), Id is not null),
+                () => (nameof(Items), _itemsSet)
+            );
 
     protected override EnumerationElement BuildCore() =>
         new()
@@ -159,7 +171,8 @@ public class EnumerationElementBuilder : BuilderBase<EnumerationElementBuilder, 
         Key             = null;
         ValueName       = null;
         Required        = false;
-
-        _items.Clear();
+        _items          = [];
+        _itemsView      = null;
+        _itemsSet       = false;
     }
 }

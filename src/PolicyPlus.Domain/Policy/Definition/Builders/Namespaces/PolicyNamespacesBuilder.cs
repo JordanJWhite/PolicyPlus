@@ -18,19 +18,18 @@ public interface IPolicyNamespacesBuilder : IBuilder<PolicyNamespaces>
 /// </summary>
 public class PolicyNamespacesBuilder : BuilderBase<PolicyNamespacesBuilder, PolicyNamespaces>, IPolicyNamespacesBuilder
 {
-    private readonly List<PolicyNamespaceAssociation> _using = new();
-    private          bool                             _targetSet;
+    private List<PolicyNamespaceAssociation>           _using = [];
+    private IReadOnlyList<PolicyNamespaceAssociation>? _usingView;
 
     public PolicyNamespaceAssociation?               Target { get; private set; }
-    public IReadOnlyList<PolicyNamespaceAssociation> Using  => _using.AsReadOnly();
+    public IReadOnlyList<PolicyNamespaceAssociation> Using  => _usingView ??= _using.AsReadOnly();
 
     public IPolicyNamespacesBuilder WithTarget(PolicyNamespaceAssociation target)
     {
         ArgumentNullException.ThrowIfNull(target, nameof(target));
         EnsureNotBuilt(nameof(WithTarget));
 
-        Target     = target;
-        _targetSet = true;
+        Target = target;
 
         return this;
     }
@@ -46,7 +45,7 @@ public class PolicyNamespacesBuilder : BuilderBase<PolicyNamespacesBuilder, Poli
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<PolicyNamespacesBuilder, PolicyNamespaces>(() => (nameof(Target),
-                                                                                                                  _targetSet)
+                                                                                                                  Target is not null)
         );
 
     protected override PolicyNamespaces BuildCore() =>
@@ -59,7 +58,7 @@ public class PolicyNamespacesBuilder : BuilderBase<PolicyNamespacesBuilder, Poli
     protected override void ResetCore()
     {
         Target     = null;
-        _targetSet = false;
-        _using.Clear();
+        _using     = [];
+        _usingView = null;
     }
 }

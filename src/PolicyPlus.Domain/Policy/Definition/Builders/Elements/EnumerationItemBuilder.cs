@@ -45,7 +45,6 @@ public class EnumerationItemBuilder : BuilderBase<EnumerationItemBuilder, Enumer
     {
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
-
         DisplayName = displayName;
 
         return this;

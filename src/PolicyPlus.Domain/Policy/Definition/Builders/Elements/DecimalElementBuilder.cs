@@ -25,8 +25,8 @@ public interface IDecimalElementBuilder : IBuilder<DecimalElement>
 /// </summary>
 public class DecimalElementBuilder : BuilderBase<DecimalElementBuilder, DecimalElement>, IDecimalElementBuilder
 {
-    public string? ClientExtension { get; private set; }
     public string? Id              { get; private set; }
+    public string? ClientExtension { get; private set; }
     public string? Key             { get; private set; }
     public uint    MaxValue        { get; private set; } = 9999;
     public uint    MinValue        { get; private set; }
@@ -39,7 +39,6 @@ public class DecimalElementBuilder : BuilderBase<DecimalElementBuilder, DecimalE
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
-
         Id = id;
 
         return this;

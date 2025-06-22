@@ -19,19 +19,18 @@ public interface IPolicyPresentationBuilder : IBuilder<PolicyPresentation>
 /// </summary>
 public class PolicyPresentationBuilder : BuilderBase<PolicyPresentationBuilder, PolicyPresentation>, IPolicyPresentationBuilder
 {
-    private readonly List<IPresentationElement> _elements = [];
-    private          bool                       _idSet;
+    private List<IPresentationElement>           _elements = [];
+    private IReadOnlyList<IPresentationElement>? _elementsView;
 
     public string?                             Id       { get; private set; }
-    public IReadOnlyList<IPresentationElement> Elements => _elements.AsReadOnly();
+    public IReadOnlyList<IPresentationElement> Elements => _elementsView ??= _elements.AsReadOnly();
 
     public IPolicyPresentationBuilder WithId(string id)
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
 
-        Id     = id;
-        _idSet = true;
+        Id = id;
 
         return this;
     }
@@ -47,7 +46,8 @@ public class PolicyPresentationBuilder : BuilderBase<PolicyPresentationBuilder, 
     }
 
     protected override void ValidateRequiredProperties() =>
-        BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<PolicyPresentationBuilder, PolicyPresentation>(() => (nameof(Id), _idSet));
+        BuilderExceptionHelper
+           .ThrowIfRequiredPropertiesMissing<PolicyPresentationBuilder, PolicyPresentation>(() => (nameof(Id), Id is not null));
 
     protected override PolicyPresentation BuildCore() =>
         new()
@@ -58,8 +58,8 @@ public class PolicyPresentationBuilder : BuilderBase<PolicyPresentationBuilder, 
 
     protected override void ResetCore()
     {
-        Id = null;
-        _elements.Clear();
-        _idSet = false;
+        Id            = null;
+        _elements     = [];
+        _elementsView = null;
     }
 }

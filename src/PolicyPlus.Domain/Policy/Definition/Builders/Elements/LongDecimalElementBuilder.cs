@@ -39,7 +39,6 @@ public class LongDecimalElementBuilder : BuilderBase<LongDecimalElementBuilder, 
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
-
         Id = id;
 
         return this;

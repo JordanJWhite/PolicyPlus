@@ -38,7 +38,6 @@ public class BooleanElementBuilder : BuilderBase<BooleanElementBuilder, BooleanE
     {
         ArgumentNullException.ThrowIfNull(id, nameof(id));
         EnsureNotBuilt(nameof(WithId));
-
         Id = id;
 
         return this;

@@ -27,21 +27,29 @@ public interface IPolicyDefinitionResourcesBuilder : IBuilder<PolicyDefinitionRe
 public class PolicyDefinitionResourcesBuilder
     : BuilderBase<PolicyDefinitionResourcesBuilder, PolicyDefinitionResources>, IPolicyDefinitionResourcesBuilder
 {
-    private readonly List<Annotation>         _annotations   = [];
-    private readonly List<PolicyPresentation> _presentations = [];
-    private readonly List<LocalizedString>    _strings       = [];
-    private          bool                     _descriptionSet;
-    private          bool                     _displayNameSet;
-    private          bool                     _revisionSet;
-    private          bool                     _schemaVersionSet;
+    // Collections to hold annotations, strings, and presentations.
+    private List<Annotation>         _annotations   = [];
+    private List<LocalizedString>    _strings       = [];
+    private List<PolicyPresentation> _presentations = [];
+
+    // Views for read-only access to the collections.
+    private IReadOnlyList<Annotation>?         _annotationsView;
+    private IReadOnlyList<LocalizedString>?    _stringsView;
+    private IReadOnlyList<PolicyPresentation>? _presentationsView;
+
+    // Flags to track which properties have been set.
+    private bool _descriptionSet;
+    private bool _displayNameSet;
+    private bool _revisionSet;
+    private bool _schemaVersionSet;
 
     public string?                           Revision      { get; private set; }
     public string?                           SchemaVersion { get; private set; }
     public string?                           DisplayName   { get; private set; }
     public string?                           Description   { get; private set; }
-    public IReadOnlyList<Annotation>         Annotations   => _annotations.AsReadOnly();
-    public IReadOnlyList<LocalizedString>    Strings       => _strings.AsReadOnly();
-    public IReadOnlyList<PolicyPresentation> Presentations => _presentations.AsReadOnly();
+    public IReadOnlyList<Annotation>         Annotations   => _annotationsView ??= _annotations.AsReadOnly();
+    public IReadOnlyList<LocalizedString>    Strings       => _stringsView ??= _strings.AsReadOnly();
+    public IReadOnlyList<PolicyPresentation> Presentations => _presentationsView ??= _presentations.AsReadOnly();
 
     public IPolicyDefinitionResourcesBuilder WithRevision(string revision)
     {
@@ -139,17 +147,19 @@ public class PolicyDefinitionResourcesBuilder
 
     protected override void ResetCore()
     {
-        Revision          = null;
-        SchemaVersion     = null;
-        DisplayName       = null;
-        Description       = null;
-        _revisionSet      = false;
-        _schemaVersionSet = false;
-        _displayNameSet   = false;
-        _descriptionSet   = false;
-
-        _annotations.Clear();
-        _strings.Clear();
-        _presentations.Clear();
+        Revision           = null;
+        SchemaVersion      = null;
+        DisplayName        = null;
+        Description        = null;
+        _annotations       = [];
+        _strings           = [];
+        _presentations     = [];
+        _annotationsView   = null;
+        _stringsView       = null;
+        _presentationsView = null;
+        _revisionSet       = false;
+        _schemaVersionSet  = false;
+        _displayNameSet    = false;
+        _descriptionSet    = false;
     }
 }

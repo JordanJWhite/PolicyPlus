@@ -24,16 +24,21 @@ public interface ICategoryBuilder : IBuilder<Category>
 /// </summary>
 public class CategoryBuilder : BuilderBase<CategoryBuilder, Category>, ICategoryBuilder
 {
-    private readonly List<Annotation> _annotations = [];
-    private readonly List<string>     _seeAlso     = [];
+    // Collections to hold annotations and "see also" references.
+    private List<Annotation> _annotations = [];
+    private List<string>     _seeAlso     = [];
+
+    // Views for read-only access to the collections.
+    private IReadOnlyList<Annotation>? _annotationsView;
+    private IReadOnlyList<string>?     _seeAlsoView;
 
     public string?                   Name           { get; private set; }
     public string?                   DisplayName    { get; private set; }
     public string?                   ExplainText    { get; private set; }
     public CategoryReference?        ParentCategory { get; private set; }
     public string?                   Keywords       { get; private set; }
-    public IReadOnlyList<Annotation> Annotations    => _annotations.AsReadOnly();
-    public IReadOnlyList<string>     SeeAlso        => _seeAlso.AsReadOnly();
+    public IReadOnlyList<Annotation> Annotations    => _annotationsView ??= _annotations.AsReadOnly();
+    public IReadOnlyList<string>     SeeAlso        => _seeAlsoView ??= _seeAlso.AsReadOnly();
 
     public ICategoryBuilder WithName(string name)
     {
@@ -119,13 +124,14 @@ public class CategoryBuilder : BuilderBase<CategoryBuilder, Category>, ICategory
 
     protected override void ResetCore()
     {
-        Name           = null;
-        DisplayName    = null;
-        ExplainText    = null;
-        ParentCategory = null;
-        Keywords       = null;
-
-        _annotations.Clear();
-        _seeAlso.Clear();
+        Name             = null;
+        DisplayName      = null;
+        ExplainText      = null;
+        ParentCategory   = null;
+        Keywords         = null;
+        _annotations     = [];
+        _seeAlso         = [];
+        _annotationsView = null;
+        _seeAlsoView     = null;
     }
 }
