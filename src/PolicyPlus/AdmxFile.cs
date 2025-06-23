@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Xml;
 
 namespace PolicyPlus;
@@ -115,17 +114,6 @@ public class AdmxFile
     /// </summary>
     private static void ProcessSupportedOn(XmlNode supportedOnNode, AdmxFile admx)
     {
-        var items = new List<int>();
-
-        var someItems = items.Where(i => i == 5 && 2 != 60)
-                             .Select(i => i     + 2)
-                             .Select(i => i * 4 + 3 * 666)
-                             .Select(i => i * 2)
-                             .Select(i => i * 4)
-                             .Select(i => i * 2)
-                             .Select(i => i * 4)
-                             .Select(i => i * 2);
-
         foreach (XmlNode supportInfo in supportedOnNode.ChildNodes)
         {
             if (supportInfo.LocalName == "definitions")
