@@ -9,8 +9,12 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders.Namespaces;
 /// </summary>
 public interface IPolicyNamespacesBuilder : IBuilder<PolicyNamespaces>
 {
-    IPolicyNamespacesBuilder WithTarget(PolicyNamespaceAssociation target);
-    IPolicyNamespacesBuilder AddUsing(PolicyNamespaceAssociation   usingNamespace);
+    IPolicyNamespacesBuilder WithTarget(PolicyNamespaceAssociation                target);
+    IPolicyNamespacesBuilder AddUsing(PolicyNamespaceAssociation                  usingNamespace);
+    IPolicyNamespacesBuilder AddUsings(IEnumerable<PolicyNamespaceAssociation>    usingNamespaces);
+    IPolicyNamespacesBuilder RemoveUsing(PolicyNamespaceAssociation               usingNamespace);
+    IPolicyNamespacesBuilder RemoveUsings(IEnumerable<PolicyNamespaceAssociation> usingNamespaces);
+    IPolicyNamespacesBuilder ClearUsings();
 }
 
 /// <summary>
@@ -26,9 +30,7 @@ public class PolicyNamespacesBuilder : BuilderBase<PolicyNamespacesBuilder, Poli
 
     public IPolicyNamespacesBuilder WithTarget(PolicyNamespaceAssociation target)
     {
-        ArgumentNullException.ThrowIfNull(target, nameof(target));
         EnsureNotBuilt(nameof(WithTarget));
-
         Target = target;
 
         return this;
@@ -37,8 +39,52 @@ public class PolicyNamespacesBuilder : BuilderBase<PolicyNamespacesBuilder, Poli
     public IPolicyNamespacesBuilder AddUsing(PolicyNamespaceAssociation usingNamespace)
     {
         EnsureNotBuilt(nameof(AddUsing));
-
         _using.Add(usingNamespace);
+
+        return this;
+    }
+
+    public IPolicyNamespacesBuilder AddUsings(IEnumerable<PolicyNamespaceAssociation> usingNamespaces)
+    {
+        ArgumentNullException.ThrowIfNull(usingNamespaces, nameof(usingNamespaces));
+        EnsureNotBuilt(nameof(AddUsings));
+
+        foreach (var usingNamespace in usingNamespaces)
+        {
+            if (usingNamespace.Equals(default))
+                throw new ArgumentException("Using namespaces collection cannot contain default values.", nameof(usingNamespaces));
+
+            _using.Add(usingNamespace);
+        }
+
+        return this;
+    }
+
+    public IPolicyNamespacesBuilder RemoveUsing(PolicyNamespaceAssociation usingNamespace)
+    {
+        // No need to check for null since it's a struct
+        EnsureNotBuilt(nameof(RemoveUsing));
+
+        _using.Remove(usingNamespace);
+
+        return this;
+    }
+
+    public IPolicyNamespacesBuilder RemoveUsings(IEnumerable<PolicyNamespaceAssociation> usingNamespaces)
+    {
+        ArgumentNullException.ThrowIfNull(usingNamespaces, nameof(usingNamespaces));
+        EnsureNotBuilt(nameof(RemoveUsings));
+
+        foreach (var usingNamespace in usingNamespaces)
+            _using.Remove(usingNamespace);
+
+        return this;
+    }
+
+    public IPolicyNamespacesBuilder ClearUsings()
+    {
+        EnsureNotBuilt(nameof(ClearUsings));
+        _using.Clear();
 
         return this;
     }

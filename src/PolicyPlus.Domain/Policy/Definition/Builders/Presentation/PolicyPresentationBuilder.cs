@@ -10,8 +10,12 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders.Presentation;
 /// </summary>
 public interface IPolicyPresentationBuilder : IBuilder<PolicyPresentation>
 {
-    IPolicyPresentationBuilder WithId(string                   id);
-    IPolicyPresentationBuilder AddElement(IPresentationElement element);
+    IPolicyPresentationBuilder WithId(string                                    id);
+    IPolicyPresentationBuilder AddElement(IPresentationElement                  element);
+    IPolicyPresentationBuilder AddElements(IEnumerable<IPresentationElement>    elements);
+    IPolicyPresentationBuilder RemoveElement(IPresentationElement               element);
+    IPolicyPresentationBuilder RemoveElements(IEnumerable<IPresentationElement> elements);
+    IPolicyPresentationBuilder ClearElements();
 }
 
 /// <summary>
@@ -41,6 +45,56 @@ public class PolicyPresentationBuilder : BuilderBase<PolicyPresentationBuilder, 
         EnsureNotBuilt(nameof(AddElement));
 
         _elements.Add(element);
+
+        return this;
+    }
+
+    public IPolicyPresentationBuilder AddElements(IEnumerable<IPresentationElement> elements)
+    {
+        ArgumentNullException.ThrowIfNull(elements, nameof(elements));
+        EnsureNotBuilt(nameof(AddElements));
+
+        foreach (var element in elements)
+        {
+            if (element == null)
+                throw new ArgumentNullException(nameof(elements), "Elements collection cannot contain null values.");
+
+            _elements.Add(element);
+        }
+
+        return this;
+    }
+
+    public IPolicyPresentationBuilder RemoveElement(IPresentationElement element)
+    {
+        ArgumentNullException.ThrowIfNull(element, nameof(element));
+        EnsureNotBuilt(nameof(RemoveElement));
+
+        _elements.Remove(element);
+
+        return this;
+    }
+
+    public IPolicyPresentationBuilder RemoveElements(IEnumerable<IPresentationElement> elements)
+    {
+        ArgumentNullException.ThrowIfNull(elements, nameof(elements));
+        EnsureNotBuilt(nameof(RemoveElements));
+
+        foreach (var element in elements)
+        {
+            if (element == null)
+                throw new ArgumentNullException(nameof(elements), "Elements collection cannot contain null values.");
+
+            _elements.Remove(element);
+        }
+
+        return this;
+    }
+
+    public IPolicyPresentationBuilder ClearElements()
+    {
+        EnsureNotBuilt(nameof(ClearElements));
+        _elements.Clear();
 
         return this;
     }
