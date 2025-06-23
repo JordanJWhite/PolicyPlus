@@ -12,6 +12,10 @@ public interface ISupportedProductBuilder : IBuilder<SupportedProduct>
     ISupportedProductBuilder WithName(string                       name);
     ISupportedProductBuilder WithDisplayName(string                displayName);
     ISupportedProductBuilder AddMajorVersion(SupportedMajorVersion majorVersion);
+    ISupportedProductBuilder AddMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions);
+    ISupportedProductBuilder RemoveMajorVersion(SupportedMajorVersion majorVersion);
+    ISupportedProductBuilder RemoveMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions);
+    ISupportedProductBuilder ClearMajorVersions();
 }
 
 /// <summary>
@@ -19,11 +23,12 @@ public interface ISupportedProductBuilder : IBuilder<SupportedProduct>
 /// </summary>
 public class SupportedProductBuilder : BuilderBase<SupportedProductBuilder, SupportedProduct>, ISupportedProductBuilder
 {
-    private readonly List<SupportedMajorVersion> _majorVersions = [];
+    private List<SupportedMajorVersion>           _majorVersions = [];
+    private IReadOnlyList<SupportedMajorVersion>? _majorVersionsView;
 
     public string?                              Name          { get; private set; }
     public string?                              DisplayName   { get; private set; }
-    public IReadOnlyList<SupportedMajorVersion> MajorVersions => _majorVersions.AsReadOnly();
+    public IReadOnlyList<SupportedMajorVersion> MajorVersions => _majorVersionsView ??= _majorVersions.AsReadOnly();
 
     public ISupportedProductBuilder WithName(string name)
     {
@@ -54,6 +59,57 @@ public class SupportedProductBuilder : BuilderBase<SupportedProductBuilder, Supp
 
         return this;
     }
+    
+    public ISupportedProductBuilder AddMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions)
+    {
+        ArgumentNullException.ThrowIfNull(majorVersions, nameof(majorVersions));
+        EnsureNotBuilt(nameof(AddMajorVersions));
+
+        foreach (var majorVersion in majorVersions)
+        {
+            if (majorVersion == null)
+                throw new ArgumentNullException(nameof(majorVersions), "Major versions collection cannot contain null values.");
+
+            _majorVersions.Add(majorVersion);
+        }
+
+        return this;
+    }
+
+    public ISupportedProductBuilder RemoveMajorVersion(SupportedMajorVersion majorVersion)
+    {
+        ArgumentNullException.ThrowIfNull(majorVersion, nameof(majorVersion));
+        EnsureNotBuilt(nameof(RemoveMajorVersion));
+
+        _majorVersions.Remove(majorVersion);
+
+        return this;
+    }
+
+    public ISupportedProductBuilder RemoveMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions)
+    {
+        ArgumentNullException.ThrowIfNull(majorVersions, nameof(majorVersions));
+        EnsureNotBuilt(nameof(RemoveMajorVersions));
+
+        foreach (var majorVersion in majorVersions)
+        {
+            if (majorVersion == null)
+                throw new ArgumentNullException(nameof(majorVersions), "Major versions collection cannot contain null values.");
+
+            _majorVersions.Remove(majorVersion);
+        }
+
+        return this;
+    }
+
+    public ISupportedProductBuilder ClearMajorVersions()
+    {
+        EnsureNotBuilt(nameof(ClearMajorVersions));
+        _majorVersions.Clear();
+        _majorVersionsView = null;
+
+        return this;
+    }
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<SupportedProductBuilder, SupportedProduct>(
@@ -66,14 +122,14 @@ public class SupportedProductBuilder : BuilderBase<SupportedProductBuilder, Supp
         {
             Name          = Name!,
             DisplayName   = DisplayName!,
-            MajorVersions = _majorVersions.AsReadOnly()
+            MajorVersions = MajorVersions
         };
 
     protected override void ResetCore()
     {
-        Name        = null;
-        DisplayName = null;
-
-        _majorVersions.Clear();
+        Name               = null;
+        DisplayName        = null;
+        _majorVersions     = [];
+        _majorVersionsView = null;
     }
 }

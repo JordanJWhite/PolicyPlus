@@ -10,13 +10,21 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders.Core;
 /// </summary>
 public interface ICategoryBuilder : IBuilder<Category>
 {
-    ICategoryBuilder WithName(string                       name);
-    ICategoryBuilder WithDisplayName(string                displayName);
-    ICategoryBuilder WithExplainText(string?               explainText);
-    ICategoryBuilder WithParentCategory(CategoryReference? parentCategory);
-    ICategoryBuilder WithKeywords(string?                  keywords);
-    ICategoryBuilder AddAnnotation(Annotation              annotation);
-    ICategoryBuilder AddSeeAlso(string                     seeAlso);
+    ICategoryBuilder WithName(string                           name);
+    ICategoryBuilder WithDisplayName(string                    displayName);
+    ICategoryBuilder WithExplainText(string?                   explainText);
+    ICategoryBuilder WithParentCategory(CategoryReference?     parentCategory);
+    ICategoryBuilder WithKeywords(string?                      keywords);
+    ICategoryBuilder AddAnnotation(Annotation                  annotation);
+    ICategoryBuilder AddAnnotations(IEnumerable<Annotation>    annotations);
+    ICategoryBuilder RemoveAnnotation(Annotation               annotation);
+    ICategoryBuilder RemoveAnnotations(IEnumerable<Annotation> annotations);
+    ICategoryBuilder ClearAnnotations();
+    ICategoryBuilder AddSeeAlso(string                  seeAlso);
+    ICategoryBuilder AddSeeAlsos(IEnumerable<string>    seeAlsos);
+    ICategoryBuilder RemoveSeeAlso(string               seeAlso);
+    ICategoryBuilder RemoveSeeAlsos(IEnumerable<string> seeAlsos);
+    ICategoryBuilder ClearSeeAlsos();
 }
 
 /// <summary>
@@ -86,10 +94,46 @@ public class CategoryBuilder : BuilderBase<CategoryBuilder, Category>, ICategory
 
     public ICategoryBuilder AddAnnotation(Annotation annotation)
     {
-        ArgumentNullException.ThrowIfNull(annotation, nameof(annotation));
         EnsureNotBuilt(nameof(AddAnnotation));
-
         _annotations.Add(annotation);
+
+        return this;
+    }
+
+    public ICategoryBuilder AddAnnotations(IEnumerable<Annotation> annotations)
+    {
+        ArgumentNullException.ThrowIfNull(annotations, nameof(annotations));
+        EnsureNotBuilt(nameof(AddAnnotations));
+
+        foreach (var annotation in annotations)
+            _annotations.Add(annotation);
+
+        return this;
+    }
+
+    public ICategoryBuilder RemoveAnnotation(Annotation annotation)
+    {
+        EnsureNotBuilt(nameof(RemoveAnnotation));
+        _annotations.Remove(annotation);
+
+        return this;
+    }
+
+    public ICategoryBuilder RemoveAnnotations(IEnumerable<Annotation> annotations)
+    {
+        ArgumentNullException.ThrowIfNull(annotations, nameof(annotations));
+        EnsureNotBuilt(nameof(RemoveAnnotations));
+
+        foreach (var annotation in annotations)
+            _annotations.Remove(annotation);
+
+        return this;
+    }
+
+    public ICategoryBuilder ClearAnnotations()
+    {
+        EnsureNotBuilt(nameof(ClearAnnotations));
+        _annotations.Clear();
 
         return this;
     }
@@ -100,6 +144,56 @@ public class CategoryBuilder : BuilderBase<CategoryBuilder, Category>, ICategory
         EnsureNotBuilt(nameof(AddSeeAlso));
 
         _seeAlso.Add(seeAlso);
+
+        return this;
+    }
+
+    public ICategoryBuilder AddSeeAlsos(IEnumerable<string> seeAlsos)
+    {
+        ArgumentNullException.ThrowIfNull(seeAlsos, nameof(seeAlsos));
+        EnsureNotBuilt(nameof(AddSeeAlsos));
+
+        foreach (var seeAlso in seeAlsos)
+        {
+            if (seeAlso == null)
+                throw new ArgumentNullException(nameof(seeAlsos), "SeeAlsos collection cannot contain null values.");
+
+            _seeAlso.Add(seeAlso);
+        }
+
+        return this;
+    }
+
+    public ICategoryBuilder RemoveSeeAlso(string seeAlso)
+    {
+        ArgumentNullException.ThrowIfNull(seeAlso, nameof(seeAlso));
+        EnsureNotBuilt(nameof(RemoveSeeAlso));
+
+        _seeAlso.Remove(seeAlso);
+
+        return this;
+    }
+
+    public ICategoryBuilder RemoveSeeAlsos(IEnumerable<string> seeAlsos)
+    {
+        ArgumentNullException.ThrowIfNull(seeAlsos, nameof(seeAlsos));
+        EnsureNotBuilt(nameof(RemoveSeeAlsos));
+
+        foreach (var seeAlso in seeAlsos)
+        {
+            if (seeAlso == null)
+                throw new ArgumentNullException(nameof(seeAlsos), "SeeAlsos collection cannot contain null values.");
+
+            _seeAlso.Remove(seeAlso);
+        }
+
+        return this;
+    }
+
+    public ICategoryBuilder ClearSeeAlsos()
+    {
+        EnsureNotBuilt(nameof(ClearSeeAlsos));
+        _seeAlso.Clear();
 
         return this;
     }

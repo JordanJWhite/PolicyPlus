@@ -53,7 +53,7 @@ public class PolicyPresentationBuilder : BuilderBase<PolicyPresentationBuilder, 
         new()
         {
             Id       = Id!,
-            Elements = _elements.AsReadOnly()
+            Elements = Elements
         };
 
     protected override void ResetCore()

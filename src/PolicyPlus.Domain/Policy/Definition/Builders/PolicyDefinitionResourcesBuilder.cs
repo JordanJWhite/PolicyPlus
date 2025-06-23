@@ -12,13 +12,25 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders;
 /// </summary>
 public interface IPolicyDefinitionResourcesBuilder : IBuilder<PolicyDefinitionResources>
 {
-    IPolicyDefinitionResourcesBuilder WithRevision(string                revision);
-    IPolicyDefinitionResourcesBuilder WithSchemaVersion(string           schemaVersion);
-    IPolicyDefinitionResourcesBuilder WithDisplayName(string             displayName);
-    IPolicyDefinitionResourcesBuilder WithDescription(string             description);
-    IPolicyDefinitionResourcesBuilder AddAnnotation(Annotation           annotation);
-    IPolicyDefinitionResourcesBuilder AddString(LocalizedString          localizedString);
-    IPolicyDefinitionResourcesBuilder AddPresentation(PolicyPresentation presentation);
+    IPolicyDefinitionResourcesBuilder WithRevision(string                       revision);
+    IPolicyDefinitionResourcesBuilder WithSchemaVersion(string                  schemaVersion);
+    IPolicyDefinitionResourcesBuilder WithDisplayName(string                    displayName);
+    IPolicyDefinitionResourcesBuilder WithDescription(string                    description);
+    IPolicyDefinitionResourcesBuilder AddAnnotation(Annotation                  annotation);
+    IPolicyDefinitionResourcesBuilder AddAnnotations(IEnumerable<Annotation>    annotations);
+    IPolicyDefinitionResourcesBuilder RemoveAnnotation(Annotation               annotation);
+    IPolicyDefinitionResourcesBuilder RemoveAnnotations(IEnumerable<Annotation> annotations);
+    IPolicyDefinitionResourcesBuilder ClearAnnotations();
+    IPolicyDefinitionResourcesBuilder AddString(LocalizedString                  localizedString);
+    IPolicyDefinitionResourcesBuilder AddStrings(IEnumerable<LocalizedString>    localizedStrings);
+    IPolicyDefinitionResourcesBuilder RemoveString(LocalizedString               localizedString);
+    IPolicyDefinitionResourcesBuilder RemoveStrings(IEnumerable<LocalizedString> localizedStrings);
+    IPolicyDefinitionResourcesBuilder ClearStrings();
+    IPolicyDefinitionResourcesBuilder AddPresentation(PolicyPresentation                  presentation);
+    IPolicyDefinitionResourcesBuilder AddPresentations(IEnumerable<PolicyPresentation>    presentations);
+    IPolicyDefinitionResourcesBuilder RemovePresentation(PolicyPresentation               presentation);
+    IPolicyDefinitionResourcesBuilder RemovePresentations(IEnumerable<PolicyPresentation> presentations);
+    IPolicyDefinitionResourcesBuilder ClearPresentations();
 }
 
 /// <summary>
@@ -97,20 +109,93 @@ public class PolicyDefinitionResourcesBuilder
 
     public IPolicyDefinitionResourcesBuilder AddAnnotation(Annotation annotation)
     {
-        ArgumentNullException.ThrowIfNull(annotation, nameof(annotation));
         EnsureNotBuilt(nameof(AddAnnotation));
-
         _annotations.Add(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder AddAnnotations(IEnumerable<Annotation> annotations)
+    {
+        ArgumentNullException.ThrowIfNull(annotations, nameof(annotations));
+        EnsureNotBuilt(nameof(AddAnnotations));
+
+        foreach (var annotation in annotations)
+            _annotations.Add(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder RemoveAnnotation(Annotation annotation)
+    {
+        EnsureNotBuilt(nameof(RemoveAnnotation));
+        _annotations.Remove(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder RemoveAnnotations(IEnumerable<Annotation> annotations)
+    {
+        ArgumentNullException.ThrowIfNull(annotations, nameof(annotations));
+        EnsureNotBuilt(nameof(RemoveAnnotations));
+
+        foreach (var annotation in annotations)
+            _annotations.Remove(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder ClearAnnotations()
+    {
+        EnsureNotBuilt(nameof(ClearAnnotations));
+        _annotations.Clear();
 
         return this;
     }
 
     public IPolicyDefinitionResourcesBuilder AddString(LocalizedString localizedString)
     {
-        ArgumentNullException.ThrowIfNull(localizedString, nameof(localizedString));
         EnsureNotBuilt(nameof(AddString));
-
         _strings.Add(localizedString);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder AddStrings(IEnumerable<LocalizedString> localizedStrings)
+    {
+        ArgumentNullException.ThrowIfNull(localizedStrings, nameof(localizedStrings));
+        EnsureNotBuilt(nameof(AddStrings));
+
+        foreach (var localizedString in localizedStrings)
+            _strings.Add(localizedString);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder RemoveString(LocalizedString localizedString)
+    {
+        EnsureNotBuilt(nameof(RemoveString));
+        _strings.Remove(localizedString);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder RemoveStrings(IEnumerable<LocalizedString> localizedStrings)
+    {
+        ArgumentNullException.ThrowIfNull(localizedStrings, nameof(localizedStrings));
+        EnsureNotBuilt(nameof(RemoveStrings));
+
+        foreach (var localizedString in localizedStrings)
+            _strings.Remove(localizedString);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder ClearStrings()
+    {
+        EnsureNotBuilt(nameof(ClearStrings));
+        _strings.Clear();
+        _stringsView = null;
 
         return this;
     }
@@ -121,6 +206,56 @@ public class PolicyDefinitionResourcesBuilder
         EnsureNotBuilt(nameof(AddPresentation));
 
         _presentations.Add(presentation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder AddPresentations(IEnumerable<PolicyPresentation> presentations)
+    {
+        ArgumentNullException.ThrowIfNull(presentations, nameof(presentations));
+        EnsureNotBuilt(nameof(AddPresentations));
+
+        foreach (var presentation in presentations)
+        {
+            if (presentation == null)
+                throw new ArgumentNullException(nameof(presentations), "Presentations collection cannot contain null values.");
+
+            _presentations.Add(presentation);
+        }
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder RemovePresentation(PolicyPresentation presentation)
+    {
+        ArgumentNullException.ThrowIfNull(presentation, nameof(presentation));
+        EnsureNotBuilt(nameof(RemovePresentation));
+
+        _presentations.Remove(presentation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder RemovePresentations(IEnumerable<PolicyPresentation> presentations)
+    {
+        ArgumentNullException.ThrowIfNull(presentations, nameof(presentations));
+        EnsureNotBuilt(nameof(RemovePresentations));
+
+        foreach (var presentation in presentations)
+        {
+            if (presentation == null)
+                throw new ArgumentNullException(nameof(presentations), "Presentations collection cannot contain null values.");
+
+            _presentations.Remove(presentation);
+        }
+
+        return this;
+    }
+
+    public IPolicyDefinitionResourcesBuilder ClearPresentations()
+    {
+        EnsureNotBuilt(nameof(ClearPresentations));
+        _presentations.Clear();
 
         return this;
     }
@@ -140,9 +275,9 @@ public class PolicyDefinitionResourcesBuilder
             SchemaVersion = SchemaVersion!,
             DisplayName   = DisplayName!,
             Description   = Description!,
-            Annotations   = _annotations.AsReadOnly(),
-            Strings       = _strings.AsReadOnly(),
-            Presentations = _presentations.AsReadOnly()
+            Annotations   = Annotations,
+            Strings       = Strings,
+            Presentations = Presentations
         };
 
     protected override void ResetCore()

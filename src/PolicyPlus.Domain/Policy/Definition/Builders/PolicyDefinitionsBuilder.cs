@@ -14,15 +14,31 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders;
 /// </summary>
 public interface IPolicyDefinitionsBuilder : IBuilder<PolicyDefinitions>
 {
-    IPolicyDefinitionsBuilder WithRevision(string                         revision);
-    IPolicyDefinitionsBuilder WithSchemaVersion(string                    schemaVersion);
-    IPolicyDefinitionsBuilder WithPolicyNamespaces(PolicyNamespaces       namespaces);
-    IPolicyDefinitionsBuilder AddSupersededAdm(FileReference              fileReference);
-    IPolicyDefinitionsBuilder AddAnnotation(Annotation                    annotation);
+    IPolicyDefinitionsBuilder WithRevision(string                             revision);
+    IPolicyDefinitionsBuilder WithSchemaVersion(string                        schemaVersion);
+    IPolicyDefinitionsBuilder WithPolicyNamespaces(PolicyNamespaces           namespaces);
+    IPolicyDefinitionsBuilder AddSupersededAdm(FileReference                  fileReference);
+    IPolicyDefinitionsBuilder AddSupersededAdms(IEnumerable<FileReference>    fileReferences);
+    IPolicyDefinitionsBuilder RemoveSupersededAdm(FileReference               fileReference);
+    IPolicyDefinitionsBuilder RemoveSupersededAdms(IEnumerable<FileReference> fileReferences);
+    IPolicyDefinitionsBuilder ClearSupersededAdms();
+    IPolicyDefinitionsBuilder AddAnnotation(Annotation                  annotation);
+    IPolicyDefinitionsBuilder AddAnnotations(IEnumerable<Annotation>    annotations);
+    IPolicyDefinitionsBuilder RemoveAnnotation(Annotation               annotation);
+    IPolicyDefinitionsBuilder RemoveAnnotations(IEnumerable<Annotation> annotations);
+    IPolicyDefinitionsBuilder ClearAnnotations();
     IPolicyDefinitionsBuilder WithResources(LocalizationResourceReference resources);
     IPolicyDefinitionsBuilder WithSupportedOn(SupportedOnTable            supportedOn);
     IPolicyDefinitionsBuilder AddCategory(Category                        category);
-    IPolicyDefinitionsBuilder AddPolicy(PolicyDefinition                  policy);
+    IPolicyDefinitionsBuilder AddCategories(IEnumerable<Category>         categories);
+    IPolicyDefinitionsBuilder RemoveCategory(Category                     category);
+    IPolicyDefinitionsBuilder RemoveCategories(IEnumerable<Category>      categories);
+    IPolicyDefinitionsBuilder ClearCategories();
+    IPolicyDefinitionsBuilder AddPolicy(PolicyDefinition                   policy);
+    IPolicyDefinitionsBuilder AddPolicies(IEnumerable<PolicyDefinition>    policies);
+    IPolicyDefinitionsBuilder RemovePolicy(PolicyDefinition                policy);
+    IPolicyDefinitionsBuilder RemovePolicies(IEnumerable<PolicyDefinition> policies);
+    IPolicyDefinitionsBuilder ClearPolicies();
 }
 
 /// <summary>
@@ -99,10 +115,86 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
         return this;
     }
 
+    public IPolicyDefinitionsBuilder AddSupersededAdms(IEnumerable<FileReference> fileReferences)
+    {
+        ArgumentNullException.ThrowIfNull(fileReferences, nameof(fileReferences));
+        EnsureNotBuilt(nameof(AddSupersededAdms));
+
+        foreach (var fileReference in fileReferences)
+            _supersededAdm.Add(fileReference);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemoveSupersededAdm(FileReference fileReference)
+    {
+        EnsureNotBuilt(nameof(RemoveSupersededAdm));
+        _supersededAdm.Remove(fileReference);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemoveSupersededAdms(IEnumerable<FileReference> fileReferences)
+    {
+        ArgumentNullException.ThrowIfNull(fileReferences, nameof(fileReferences));
+        EnsureNotBuilt(nameof(RemoveSupersededAdms));
+
+        foreach (var fileReference in fileReferences)
+            _supersededAdm.Remove(fileReference);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder ClearSupersededAdms()
+    {
+        EnsureNotBuilt(nameof(ClearSupersededAdms));
+        _supersededAdm.Clear();
+
+        return this;
+    }
+
     public IPolicyDefinitionsBuilder AddAnnotation(Annotation annotation)
     {
         EnsureNotBuilt(nameof(AddAnnotation));
         _annotations.Add(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder AddAnnotations(IEnumerable<Annotation> annotations)
+    {
+        ArgumentNullException.ThrowIfNull(annotations, nameof(annotations));
+        EnsureNotBuilt(nameof(AddAnnotations));
+
+        foreach (var annotation in annotations)
+            _annotations.Add(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemoveAnnotation(Annotation annotation)
+    {
+        EnsureNotBuilt(nameof(RemoveAnnotation));
+        _annotations.Remove(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemoveAnnotations(IEnumerable<Annotation> annotations)
+    {
+        ArgumentNullException.ThrowIfNull(annotations, nameof(annotations));
+        EnsureNotBuilt(nameof(RemoveAnnotations));
+
+        foreach (var annotation in annotations)
+            _annotations.Remove(annotation);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder ClearAnnotations()
+    {
+        EnsureNotBuilt(nameof(ClearAnnotations));
+        _annotations.Clear();
 
         return this;
     }
@@ -135,12 +227,114 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
         return this;
     }
 
+    public IPolicyDefinitionsBuilder AddCategories(IEnumerable<Category> categories)
+    {
+        ArgumentNullException.ThrowIfNull(categories, nameof(categories));
+        EnsureNotBuilt(nameof(AddCategories));
+
+        foreach (var category in categories)
+        {
+            if (category == null)
+                throw new ArgumentNullException(nameof(categories), "Categories collection cannot contain null values.");
+
+            _categories.Add(category);
+        }
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemoveCategory(Category category)
+    {
+        ArgumentNullException.ThrowIfNull(category, nameof(category));
+        EnsureNotBuilt(nameof(RemoveCategory));
+
+        _categories.Remove(category);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemoveCategories(IEnumerable<Category> categories)
+    {
+        ArgumentNullException.ThrowIfNull(categories, nameof(categories));
+        EnsureNotBuilt(nameof(RemoveCategories));
+
+        foreach (var category in categories)
+        {
+            if (category == null)
+                throw new ArgumentNullException(nameof(categories), "Categories collection cannot contain null values.");
+
+            _categories.Remove(category);
+        }
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder ClearCategories()
+    {
+        EnsureNotBuilt(nameof(ClearCategories));
+        _categories.Clear();
+        _categoriesView = null;
+
+        return this;
+    }
+
     public IPolicyDefinitionsBuilder AddPolicy(PolicyDefinition policy)
     {
         ArgumentNullException.ThrowIfNull(policy, nameof(policy));
         EnsureNotBuilt(nameof(AddPolicy));
 
         _policies.Add(policy);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder AddPolicies(IEnumerable<PolicyDefinition> policies)
+    {
+        ArgumentNullException.ThrowIfNull(policies, nameof(policies));
+        EnsureNotBuilt(nameof(AddPolicies));
+
+        foreach (var policy in policies)
+        {
+            if (policy == null)
+                throw new ArgumentNullException(nameof(policies), "Policies collection cannot contain null values.");
+
+            _policies.Add(policy);
+        }
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemovePolicy(PolicyDefinition policy)
+    {
+        ArgumentNullException.ThrowIfNull(policy, nameof(policy));
+        EnsureNotBuilt(nameof(RemovePolicy));
+
+        _policies.Remove(policy);
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder RemovePolicies(IEnumerable<PolicyDefinition> policies)
+    {
+        ArgumentNullException.ThrowIfNull(policies, nameof(policies));
+        EnsureNotBuilt(nameof(RemovePolicies));
+
+        foreach (var policy in policies)
+        {
+            if (policy == null)
+                throw new ArgumentNullException(nameof(policies), "Policies collection cannot contain null values.");
+
+            _policies.Remove(policy);
+        }
+
+        return this;
+    }
+
+    public IPolicyDefinitionsBuilder ClearPolicies()
+    {
+        EnsureNotBuilt(nameof(ClearPolicies));
+        _policies.Clear();
+        _policiesView = null;
 
         return this;
     }
@@ -159,12 +353,12 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
             Revision         = Revision!,
             SchemaVersion    = SchemaVersion!,
             PolicyNamespaces = PolicyNamespaces!,
-            SupersededAdm    = _supersededAdm.AsReadOnly(),
-            Annotations      = _annotations.AsReadOnly(),
+            SupersededAdm    = SupersededAdm,
+            Annotations      = Annotations,
             Resources        = Resources!.Value,
             SupportedOn      = SupportedOn,
-            Categories       = _categories.AsReadOnly(),
-            Policies         = _policies.AsReadOnly()
+            Categories       = Categories,
+            Policies         = Policies
         };
 
     protected override void ResetCore()

@@ -19,8 +19,8 @@ public interface ISupportedOnDefinitionBuilder : IBuilder<SupportedOnDefinition>
 /// </summary>
 public class SupportedOnDefinitionBuilder : BuilderBase<SupportedOnDefinitionBuilder, SupportedOnDefinition>, ISupportedOnDefinitionBuilder
 {
-    private bool _displayNameSet;
     private bool _nameSet;
+    private bool _displayNameSet;
 
     public string?                Name        { get; private set; }
     public string?                DisplayName { get; private set; }

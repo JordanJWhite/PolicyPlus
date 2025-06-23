@@ -1,6 +1,6 @@
 ﻿using PolicyPlus.Domain.Builders.Base;
 using PolicyPlus.Domain.Builders.Helpers;
-using PolicyPlus.Domain.Policy.Definition.SupportedOn;
+using PolicyPlus.Domain.Policy.Definition.Model.SupportedOn;
 
 namespace PolicyPlus.Domain.Policy.Definition.Builders.SupportedOn;
 
@@ -9,10 +9,14 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders.SupportedOn;
 /// </summary>
 public interface ISupportedMajorVersionBuilder : IBuilder<SupportedMajorVersion>
 {
-    ISupportedMajorVersionBuilder WithName(string name);
-    ISupportedMajorVersionBuilder WithDisplayName(string displayName);
-    ISupportedMajorVersionBuilder WithVersionIndex(uint versionIndex);
-    ISupportedMajorVersionBuilder AddMinorVersion(SupportedMinorVersion minorVersion);
+    ISupportedMajorVersionBuilder WithName(string                                        name);
+    ISupportedMajorVersionBuilder WithDisplayName(string                                 displayName);
+    ISupportedMajorVersionBuilder WithVersionIndex(uint                                  versionIndex);
+    ISupportedMajorVersionBuilder AddMinorVersion(SupportedMinorVersion                  minorVersion);
+    ISupportedMajorVersionBuilder AddMinorVersions(IEnumerable<SupportedMinorVersion>    minorVersions);
+    ISupportedMajorVersionBuilder RemoveMinorVersion(SupportedMinorVersion               minorVersion);
+    ISupportedMajorVersionBuilder RemoveMinorVersions(IEnumerable<SupportedMinorVersion> minorVersions);
+    ISupportedMajorVersionBuilder ClearMinorVersions();
 }
 
 /// <summary>
@@ -20,22 +24,24 @@ public interface ISupportedMajorVersionBuilder : IBuilder<SupportedMajorVersion>
 /// </summary>
 public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBuilder, SupportedMajorVersion>, ISupportedMajorVersionBuilder
 {
-    private readonly List<SupportedMinorVersion> _minorVersions = new();
+    private List<SupportedMinorVersion>           _minorVersions = [];
+    private IReadOnlyList<SupportedMinorVersion>? _minorVersionsView;
+
     private bool _nameSet;
     private bool _displayNameSet;
     private bool _versionIndexSet;
-    
-    public string? Name { get; private set; }
-    public string? DisplayName { get; private set; }
-    public uint? VersionIndex { get; private set; }
-    public IReadOnlyList<SupportedMinorVersion> MinorVersions => _minorVersions.AsReadOnly();
+
+    public string?                              Name          { get; private set; }
+    public string?                              DisplayName   { get; private set; }
+    public uint?                                VersionIndex  { get; private set; }
+    public IReadOnlyList<SupportedMinorVersion> MinorVersions => _minorVersionsView ??= _minorVersions.AsReadOnly();
 
     public ISupportedMajorVersionBuilder WithName(string name)
     {
         ArgumentNullException.ThrowIfNull(name, nameof(name));
         EnsureNotBuilt(nameof(WithName));
-        
-        Name = name;
+
+        Name     = name;
         _nameSet = true;
 
         return this;
@@ -45,8 +51,8 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
     {
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
-        
-        DisplayName = displayName;
+
+        DisplayName     = displayName;
         _displayNameSet = true;
 
         return this;
@@ -55,8 +61,8 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
     public ISupportedMajorVersionBuilder WithVersionIndex(uint versionIndex)
     {
         EnsureNotBuilt(nameof(WithVersionIndex));
-        
-        VersionIndex = versionIndex;
+
+        VersionIndex     = versionIndex;
         _versionIndexSet = true;
 
         return this;
@@ -66,8 +72,58 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
     {
         ArgumentNullException.ThrowIfNull(minorVersion, nameof(minorVersion));
         EnsureNotBuilt(nameof(AddMinorVersion));
-        
+
         _minorVersions.Add(minorVersion);
+
+        return this;
+    }
+
+    public ISupportedMajorVersionBuilder AddMinorVersions(IEnumerable<SupportedMinorVersion> minorVersions)
+    {
+        ArgumentNullException.ThrowIfNull(minorVersions, nameof(minorVersions));
+        EnsureNotBuilt(nameof(AddMinorVersions));
+
+        foreach (var minorVersion in minorVersions)
+        {
+            if (minorVersion == null)
+                throw new ArgumentNullException(nameof(minorVersions), "Minor versions collection cannot contain null values.");
+
+            _minorVersions.Add(minorVersion);
+        }
+
+        return this;
+    }
+
+    public ISupportedMajorVersionBuilder RemoveMinorVersion(SupportedMinorVersion minorVersion)
+    {
+        ArgumentNullException.ThrowIfNull(minorVersion, nameof(minorVersion));
+        EnsureNotBuilt(nameof(RemoveMinorVersion));
+
+        _minorVersions.Remove(minorVersion);
+
+        return this;
+    }
+
+    public ISupportedMajorVersionBuilder RemoveMinorVersions(IEnumerable<SupportedMinorVersion> minorVersions)
+    {
+        ArgumentNullException.ThrowIfNull(minorVersions, nameof(minorVersions));
+        EnsureNotBuilt(nameof(RemoveMinorVersions));
+
+        foreach (var minorVersion in minorVersions)
+        {
+            if (minorVersion == null)
+                throw new ArgumentNullException(nameof(minorVersions), "Minor versions collection cannot contain null values.");
+
+            _minorVersions.Remove(minorVersion);
+        }
+
+        return this;
+    }
+
+    public ISupportedMajorVersionBuilder ClearMinorVersions()
+    {
+        EnsureNotBuilt(nameof(ClearMinorVersions));
+        _minorVersions.Clear();
 
         return this;
     }
@@ -82,20 +138,21 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
     protected override SupportedMajorVersion BuildCore() =>
         new()
         {
-            Name = Name!,
-            DisplayName = DisplayName!,
-            VersionIndex = VersionIndex!.Value,
-            MinorVersions = _minorVersions.AsReadOnly()
+            Name          = Name!,
+            DisplayName   = DisplayName!,
+            VersionIndex  = VersionIndex!.Value,
+            MinorVersions = MinorVersions
         };
 
     protected override void ResetCore()
     {
-        Name = null;
-        DisplayName = null;
-        VersionIndex = null;
-        _minorVersions.Clear();
-        _nameSet = false;
-        _displayNameSet = false;
-        _versionIndexSet = false;
+        Name               = null;
+        DisplayName        = null;
+        VersionIndex       = null;
+        _minorVersions     = [];
+        _minorVersionsView = null;
+        _nameSet           = false;
+        _displayNameSet    = false;
+        _versionIndexSet   = false;
     }
 }
