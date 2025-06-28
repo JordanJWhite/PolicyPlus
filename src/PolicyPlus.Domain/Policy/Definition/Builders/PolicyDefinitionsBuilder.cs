@@ -58,12 +58,6 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
     private IReadOnlyList<Category>?         _categoriesView;
     private IReadOnlyList<PolicyDefinition>? _policiesView;
 
-    // Flags to track which properties have been set.
-    private bool _revisionSet;
-    private bool _schemaVersionSet;
-    private bool _policyNamespacesSet;
-    private bool _resourcesSet;
-
     public string?                         Revision         { get; private set; }
     public string?                         SchemaVersion    { get; private set; }
     public PolicyNamespaces?               PolicyNamespaces { get; private set; }
@@ -79,8 +73,7 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
         ArgumentNullException.ThrowIfNull(revision, nameof(revision));
         EnsureNotBuilt(nameof(WithRevision));
 
-        Revision     = revision;
-        _revisionSet = true;
+        Revision = revision;
 
         return this;
     }
@@ -90,8 +83,7 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
         ArgumentNullException.ThrowIfNull(schemaVersion, nameof(schemaVersion));
         EnsureNotBuilt(nameof(WithSchemaVersion));
 
-        SchemaVersion     = schemaVersion;
-        _schemaVersionSet = true;
+        SchemaVersion = schemaVersion;
 
         return this;
     }
@@ -101,8 +93,7 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
         ArgumentNullException.ThrowIfNull(namespaces, nameof(namespaces));
         EnsureNotBuilt(nameof(WithPolicyNamespaces));
 
-        PolicyNamespaces     = namespaces;
-        _policyNamespacesSet = true;
+        PolicyNamespaces = namespaces;
 
         return this;
     }
@@ -203,8 +194,7 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
     {
         EnsureNotBuilt(nameof(WithResources));
 
-        Resources     = resources;
-        _resourcesSet = true;
+        Resources = resources;
 
         return this;
     }
@@ -341,10 +331,10 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<PolicyDefinitionsBuilder, PolicyDefinitions>(
-            () => (nameof(Revision), _revisionSet),
-            () => (nameof(SchemaVersion), _schemaVersionSet),
-            () => (nameof(PolicyNamespaces), _policyNamespacesSet),
-            () => (nameof(Resources), _resourcesSet)
+            () => (nameof(Revision), Revision is not null),
+            () => (nameof(SchemaVersion), SchemaVersion is not null),
+            () => (nameof(PolicyNamespaces), PolicyNamespaces is not null),
+            () => (nameof(Resources), Resources is not null)
         );
 
     protected override PolicyDefinitions BuildCore() =>
@@ -363,22 +353,18 @@ public class PolicyDefinitionsBuilder : BuilderBase<PolicyDefinitionsBuilder, Po
 
     protected override void ResetCore()
     {
-        Revision             = null;
-        SchemaVersion        = null;
-        PolicyNamespaces     = null;
-        Resources            = null;
-        SupportedOn          = null;
-        _supersededAdm       = [];
-        _annotations         = [];
-        _categories          = [];
-        _policies            = [];
-        _supersededAdmView   = null;
-        _annotationsView     = null;
-        _categoriesView      = null;
-        _policiesView        = null;
-        _revisionSet         = false;
-        _schemaVersionSet    = false;
-        _policyNamespacesSet = false;
-        _resourcesSet        = false;
+        Revision           = null;
+        SchemaVersion      = null;
+        PolicyNamespaces   = null;
+        Resources          = null;
+        SupportedOn        = null;
+        _supersededAdm     = [];
+        _annotations       = [];
+        _categories        = [];
+        _policies          = [];
+        _supersededAdmView = null;
+        _annotationsView   = null;
+        _categoriesView    = null;
+        _policiesView      = null;
     }
 }

@@ -30,9 +30,6 @@
 
   <ItemGroup>
     <Folder Include="Policy\Configuration\" />
-    <Folder Include="Policy\Definition\Builders\Presentation\Elements\" />
-    <Folder Include="Policy\Definition\Builders\Presentation\Localization\" />
-    <Folder Include="Policy\Definition\Builders\References\" />
     <Folder Include="Policy\Definition\Validators\" />
   </ItemGroup>
 

@@ -19,10 +19,6 @@ public interface ISupportedMinorVersionBuilder : IBuilder<SupportedMinorVersion>
 /// </summary>
 public class SupportedMinorVersionBuilder : BuilderBase<SupportedMinorVersionBuilder, SupportedMinorVersion>, ISupportedMinorVersionBuilder
 {
-    private bool _nameSet;
-    private bool _displayNameSet;
-    private bool _versionIndexSet;
-
     public string? Name         { get; private set; }
     public string? DisplayName  { get; private set; }
     public uint?   VersionIndex { get; private set; }
@@ -31,9 +27,7 @@ public class SupportedMinorVersionBuilder : BuilderBase<SupportedMinorVersionBui
     {
         ArgumentNullException.ThrowIfNull(name, nameof(name));
         EnsureNotBuilt(nameof(WithName));
-
-        Name     = name;
-        _nameSet = true;
+        Name = name;
 
         return this;
     }
@@ -42,9 +36,7 @@ public class SupportedMinorVersionBuilder : BuilderBase<SupportedMinorVersionBui
     {
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
-
-        DisplayName     = displayName;
-        _displayNameSet = true;
+        DisplayName = displayName;
 
         return this;
     }
@@ -52,18 +44,16 @@ public class SupportedMinorVersionBuilder : BuilderBase<SupportedMinorVersionBui
     public ISupportedMinorVersionBuilder WithVersionIndex(uint versionIndex)
     {
         EnsureNotBuilt(nameof(WithVersionIndex));
-
-        VersionIndex     = versionIndex;
-        _versionIndexSet = true;
+        VersionIndex = versionIndex;
 
         return this;
     }
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<SupportedMinorVersionBuilder, SupportedMinorVersion>(
-            () => (nameof(Name), _nameSet),
-            () => (nameof(DisplayName), _displayNameSet),
-            () => (nameof(VersionIndex), _versionIndexSet)
+            () => (nameof(Name), Name is not null),
+            () => (nameof(DisplayName), DisplayName is not null),
+            () => (nameof(VersionIndex), VersionIndex is not null)
         );
 
     protected override SupportedMinorVersion BuildCore() =>
@@ -76,11 +66,8 @@ public class SupportedMinorVersionBuilder : BuilderBase<SupportedMinorVersionBui
 
     protected override void ResetCore()
     {
-        Name             = null;
-        DisplayName      = null;
-        VersionIndex     = null;
-        _nameSet         = false;
-        _displayNameSet  = false;
-        _versionIndexSet = false;
+        Name         = null;
+        DisplayName  = null;
+        VersionIndex = null;
     }
 }

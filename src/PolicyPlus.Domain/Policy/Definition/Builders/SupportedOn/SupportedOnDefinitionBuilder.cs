@@ -19,9 +19,6 @@ public interface ISupportedOnDefinitionBuilder : IBuilder<SupportedOnDefinition>
 /// </summary>
 public class SupportedOnDefinitionBuilder : BuilderBase<SupportedOnDefinitionBuilder, SupportedOnDefinition>, ISupportedOnDefinitionBuilder
 {
-    private bool _nameSet;
-    private bool _displayNameSet;
-
     public string?                Name        { get; private set; }
     public string?                DisplayName { get; private set; }
     public ISupportedOnCondition? Condition   { get; private set; }
@@ -30,9 +27,7 @@ public class SupportedOnDefinitionBuilder : BuilderBase<SupportedOnDefinitionBui
     {
         ArgumentNullException.ThrowIfNull(name, nameof(name));
         EnsureNotBuilt(nameof(WithName));
-
-        Name     = name;
-        _nameSet = true;
+        Name = name;
 
         return this;
     }
@@ -41,9 +36,7 @@ public class SupportedOnDefinitionBuilder : BuilderBase<SupportedOnDefinitionBui
     {
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
-
-        DisplayName     = displayName;
-        _displayNameSet = true;
+        DisplayName = displayName;
 
         return this;
     }
@@ -58,8 +51,8 @@ public class SupportedOnDefinitionBuilder : BuilderBase<SupportedOnDefinitionBui
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<SupportedOnDefinitionBuilder, SupportedOnDefinition>(
-            () => (nameof(Name), _nameSet),
-            () => (nameof(DisplayName), _displayNameSet)
+            () => (nameof(Name), Name is not null),
+            () => (nameof(DisplayName), DisplayName is not null)
         );
 
     protected override SupportedOnDefinition BuildCore() =>
@@ -72,10 +65,8 @@ public class SupportedOnDefinitionBuilder : BuilderBase<SupportedOnDefinitionBui
 
     protected override void ResetCore()
     {
-        Name            = null;
-        DisplayName     = null;
-        Condition       = null;
-        _nameSet        = false;
-        _displayNameSet = false;
+        Name        = null;
+        DisplayName = null;
+        Condition   = null;
     }
 }

@@ -49,12 +49,6 @@ public class PolicyDefinitionResourcesBuilder
     private IReadOnlyList<LocalizedString>?    _stringsView;
     private IReadOnlyList<PolicyPresentation>? _presentationsView;
 
-    // Flags to track which properties have been set.
-    private bool _descriptionSet;
-    private bool _displayNameSet;
-    private bool _revisionSet;
-    private bool _schemaVersionSet;
-
     public string?                           Revision      { get; private set; }
     public string?                           SchemaVersion { get; private set; }
     public string?                           DisplayName   { get; private set; }
@@ -68,8 +62,7 @@ public class PolicyDefinitionResourcesBuilder
         ArgumentNullException.ThrowIfNull(revision, nameof(revision));
         EnsureNotBuilt(nameof(WithRevision));
 
-        Revision     = revision;
-        _revisionSet = true;
+        Revision = revision;
 
         return this;
     }
@@ -79,8 +72,7 @@ public class PolicyDefinitionResourcesBuilder
         ArgumentNullException.ThrowIfNull(schemaVersion, nameof(schemaVersion));
         EnsureNotBuilt(nameof(WithSchemaVersion));
 
-        SchemaVersion     = schemaVersion;
-        _schemaVersionSet = true;
+        SchemaVersion = schemaVersion;
 
         return this;
     }
@@ -90,8 +82,7 @@ public class PolicyDefinitionResourcesBuilder
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
 
-        DisplayName     = displayName;
-        _displayNameSet = true;
+        DisplayName = displayName;
 
         return this;
     }
@@ -101,8 +92,7 @@ public class PolicyDefinitionResourcesBuilder
         ArgumentNullException.ThrowIfNull(description, nameof(description));
         EnsureNotBuilt(nameof(WithDescription));
 
-        Description     = description;
-        _descriptionSet = true;
+        Description = description;
 
         return this;
     }
@@ -262,10 +252,10 @@ public class PolicyDefinitionResourcesBuilder
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<PolicyDefinitionResourcesBuilder, PolicyDefinitionResources>(
-            () => (nameof(Revision), _revisionSet),
-            () => (nameof(SchemaVersion), _schemaVersionSet),
-            () => (nameof(DisplayName), _displayNameSet),
-            () => (nameof(Description), _descriptionSet)
+            () => (nameof(Revision), Revision is not null),
+            () => (nameof(SchemaVersion), SchemaVersion is not null),
+            () => (nameof(DisplayName), DisplayName is not null),
+            () => (nameof(Description), Description is not null)
         );
 
     protected override PolicyDefinitionResources BuildCore() =>
@@ -292,9 +282,5 @@ public class PolicyDefinitionResourcesBuilder
         _annotationsView   = null;
         _stringsView       = null;
         _presentationsView = null;
-        _revisionSet       = false;
-        _schemaVersionSet  = false;
-        _displayNameSet    = false;
-        _descriptionSet    = false;
     }
 }

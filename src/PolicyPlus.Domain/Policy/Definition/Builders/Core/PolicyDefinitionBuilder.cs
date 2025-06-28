@@ -59,13 +59,6 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
     private IReadOnlyList<PolicyElementBase>? _elementsView;
     private IReadOnlyList<string>?            _seeAlsoView;
 
-    // Flags to track whether required properties have been set.
-    private bool _nameSet;
-    private bool _classSet;
-    private bool _displayNameSet;
-    private bool _keySet;
-    private bool _supportedOnSet;
-
     public string?                          Name           { get; private set; }
     public PolicyClass?                     Class          { get; private set; }
     public string?                          DisplayName    { get; private set; }
@@ -89,8 +82,7 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
         ArgumentNullException.ThrowIfNull(name, nameof(name));
         EnsureNotBuilt(nameof(WithName));
 
-        Name     = name;
-        _nameSet = true;
+        Name = name;
 
         return this;
     }
@@ -99,8 +91,7 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
     {
         EnsureNotBuilt(nameof(WithClass));
 
-        Class     = policyClass;
-        _classSet = true;
+        Class = policyClass;
 
         return this;
     }
@@ -110,8 +101,7 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
 
-        DisplayName     = displayName;
-        _displayNameSet = true;
+        DisplayName = displayName;
 
         return this;
     }
@@ -129,8 +119,7 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
         ArgumentNullException.ThrowIfNull(key, nameof(key));
         EnsureNotBuilt(nameof(WithKey));
 
-        Key     = key;
-        _keySet = true;
+        Key = key;
 
         return this;
     }
@@ -155,8 +144,7 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
     {
         EnsureNotBuilt(nameof(WithSupportedOn));
 
-        SupportedOn     = supportedOn;
-        _supportedOnSet = true;
+        SupportedOn = supportedOn;
 
         return this;
     }
@@ -377,11 +365,11 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<PolicyDefinitionBuilder, PolicyDefinition>(
-            () => (nameof(Name), _nameSet),
-            () => (nameof(Class), _classSet),
-            () => (nameof(DisplayName), _displayNameSet),
-            () => (nameof(Key), _keySet),
-            () => (nameof(SupportedOn), _supportedOnSet)
+            () => (nameof(Name), Name is not null),
+            () => (nameof(Class), Class is not null),
+            () => (nameof(DisplayName), DisplayName is not null),
+            () => (nameof(Key), Key is not null),
+            () => (nameof(SupportedOn), SupportedOn is not null)
         );
 
     protected override PolicyDefinition BuildCore() =>
@@ -428,10 +416,5 @@ public class PolicyDefinitionBuilder : BuilderBase<PolicyDefinitionBuilder, Poli
         _annotationsView = null;
         _elementsView    = null;
         _seeAlsoView     = null;
-        _nameSet         = false;
-        _classSet        = false;
-        _displayNameSet  = false;
-        _keySet          = false;
-        _supportedOnSet  = false;
     }
 }

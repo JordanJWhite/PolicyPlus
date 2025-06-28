@@ -27,10 +27,6 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
     private List<SupportedMinorVersion>           _minorVersions = [];
     private IReadOnlyList<SupportedMinorVersion>? _minorVersionsView;
 
-    private bool _nameSet;
-    private bool _displayNameSet;
-    private bool _versionIndexSet;
-
     public string?                              Name          { get; private set; }
     public string?                              DisplayName   { get; private set; }
     public uint?                                VersionIndex  { get; private set; }
@@ -41,8 +37,7 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
         ArgumentNullException.ThrowIfNull(name, nameof(name));
         EnsureNotBuilt(nameof(WithName));
 
-        Name     = name;
-        _nameSet = true;
+        Name = name;
 
         return this;
     }
@@ -52,8 +47,7 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
         ArgumentNullException.ThrowIfNull(displayName, nameof(displayName));
         EnsureNotBuilt(nameof(WithDisplayName));
 
-        DisplayName     = displayName;
-        _displayNameSet = true;
+        DisplayName = displayName;
 
         return this;
     }
@@ -62,8 +56,7 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
     {
         EnsureNotBuilt(nameof(WithVersionIndex));
 
-        VersionIndex     = versionIndex;
-        _versionIndexSet = true;
+        VersionIndex = versionIndex;
 
         return this;
     }
@@ -130,9 +123,9 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
 
     protected override void ValidateRequiredProperties() =>
         BuilderExceptionHelper.ThrowIfRequiredPropertiesMissing<SupportedMajorVersionBuilder, SupportedMajorVersion>(
-            () => (nameof(Name), _nameSet),
-            () => (nameof(DisplayName), _displayNameSet),
-            () => (nameof(VersionIndex), _versionIndexSet)
+            () => (nameof(Name), Name is not null),
+            () => (nameof(DisplayName), DisplayName is not null),
+            () => (nameof(VersionIndex), VersionIndex is not null)
         );
 
     protected override SupportedMajorVersion BuildCore() =>
@@ -151,8 +144,5 @@ public class SupportedMajorVersionBuilder : BuilderBase<SupportedMajorVersionBui
         VersionIndex       = null;
         _minorVersions     = [];
         _minorVersionsView = null;
-        _nameSet           = false;
-        _displayNameSet    = false;
-        _versionIndexSet   = false;
     }
 }

@@ -9,11 +9,11 @@ namespace PolicyPlus.Domain.Policy.Definition.Builders.SupportedOn;
 /// </summary>
 public interface ISupportedProductBuilder : IBuilder<SupportedProduct>
 {
-    ISupportedProductBuilder WithName(string                       name);
-    ISupportedProductBuilder WithDisplayName(string                displayName);
-    ISupportedProductBuilder AddMajorVersion(SupportedMajorVersion majorVersion);
-    ISupportedProductBuilder AddMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions);
-    ISupportedProductBuilder RemoveMajorVersion(SupportedMajorVersion majorVersion);
+    ISupportedProductBuilder WithName(string                                        name);
+    ISupportedProductBuilder WithDisplayName(string                                 displayName);
+    ISupportedProductBuilder AddMajorVersion(SupportedMajorVersion                  majorVersion);
+    ISupportedProductBuilder AddMajorVersions(IEnumerable<SupportedMajorVersion>    majorVersions);
+    ISupportedProductBuilder RemoveMajorVersion(SupportedMajorVersion               majorVersion);
     ISupportedProductBuilder RemoveMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions);
     ISupportedProductBuilder ClearMajorVersions();
 }
@@ -59,7 +59,7 @@ public class SupportedProductBuilder : BuilderBase<SupportedProductBuilder, Supp
 
         return this;
     }
-    
+
     public ISupportedProductBuilder AddMajorVersions(IEnumerable<SupportedMajorVersion> majorVersions)
     {
         ArgumentNullException.ThrowIfNull(majorVersions, nameof(majorVersions));
@@ -106,7 +106,6 @@ public class SupportedProductBuilder : BuilderBase<SupportedProductBuilder, Supp
     {
         EnsureNotBuilt(nameof(ClearMajorVersions));
         _majorVersions.Clear();
-        _majorVersionsView = null;
 
         return this;
     }
