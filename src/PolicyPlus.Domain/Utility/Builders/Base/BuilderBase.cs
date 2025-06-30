@@ -1,6 +1,6 @@
-﻿using PolicyPlus.Domain.Builders.Helpers;
+﻿using PolicyPlus.Domain.Utility.Builders.Helpers;
 
-namespace PolicyPlus.Domain.Builders.Base;
+namespace PolicyPlus.Domain.Utility.Builders.Base;
 
 /// <summary>
 ///     Base implementation for builders.

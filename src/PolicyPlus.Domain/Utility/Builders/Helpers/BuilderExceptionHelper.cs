@@ -1,6 +1,6 @@
-﻿using PolicyPlus.Domain.Builders.Exceptions;
+﻿using PolicyPlus.Domain.Utility.Builders.Exceptions;
 
-namespace PolicyPlus.Domain.Builders.Helpers;
+namespace PolicyPlus.Domain.Utility.Builders.Helpers;
 
 /// <summary>
 ///     Helper class for creating builder exceptions with consistent messaging.
@@ -37,32 +37,33 @@ public static class BuilderExceptionHelper
     }
 
     /// <summary>
-    ///     Creates a validation exception.
+    ///     Throws a validation exception.
     /// </summary>
     /// <typeparam name="TBuilder">The builder type.</typeparam>
     /// <typeparam name="TTarget">The target type being built.</typeparam>
     /// <param name="propertyName">The name of the property.</param>
     /// <param name="invalidValue">The invalid value.</param>
     /// <param name="rule">The validation rule description.</param>
-    /// <returns>A new BuilderValidationException.</returns>
-    public static BuilderValidationException Validation<TBuilder, TTarget>(string propertyName, object? invalidValue, string rule) =>
-        new(propertyName, invalidValue, rule, typeof(TBuilder), typeof(TTarget));
+    /// <exception cref="BuilderValidationException">This exception is always thrown.</exception>
+    public static void ThrowValidationException<TBuilder, TTarget>(string propertyName, object? invalidValue, string rule) =>
+        throw new BuilderValidationException(propertyName, invalidValue, rule, typeof(TBuilder), typeof(TTarget));
 
     /// <summary>
-    ///     Creates an already built exception.
+    ///     Throws an already built exception.
     /// </summary>
     /// <typeparam name="TBuilder">The builder type.</typeparam>
     /// <typeparam name="TTarget">The target type being built.</typeparam>
-    /// <returns>A new BuilderAlreadyBuiltException.</returns>
-    public static BuilderAlreadyBuiltException ThrowAlreadyBuilt<TBuilder, TTarget>() => new(typeof(TBuilder), typeof(TTarget));
+    /// <exception cref="BuilderAlreadyBuiltException">This exception is always thrown.</exception>
+    public static void ThrowAlreadyBuilt<TBuilder, TTarget>() =>
+        throw new BuilderAlreadyBuiltException(typeof(TBuilder), typeof(TTarget));
 
     /// <summary>
-    ///     Creates an already built exception with method name.
+    ///     Throws an already built exception with method name.
     /// </summary>
     /// <typeparam name="TBuilder">The builder type.</typeparam>
     /// <typeparam name="TTarget">The target type being built.</typeparam>
     /// <param name="methodName">The method that was attempted.</param>
-    /// <returns>A new BuilderAlreadyBuiltException.</returns>
-    public static BuilderAlreadyBuiltException ThrowAlreadyBuilt<TBuilder, TTarget>(string methodName) =>
-        new(methodName, typeof(TBuilder), typeof(TTarget));
+    /// <exception cref="BuilderAlreadyBuiltException">This exception is always thrown.</exception>
+    public static void ThrowAlreadyBuilt<TBuilder, TTarget>(string methodName) =>
+        throw new BuilderAlreadyBuiltException(methodName, typeof(TBuilder), typeof(TTarget));
 }

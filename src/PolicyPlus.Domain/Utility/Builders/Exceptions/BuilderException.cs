@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace PolicyPlus.Domain.Builders.Exceptions;
+namespace PolicyPlus.Domain.Utility.Builders.Exceptions;
 
 /// <summary>
 ///     Base exception for all builder-related errors.

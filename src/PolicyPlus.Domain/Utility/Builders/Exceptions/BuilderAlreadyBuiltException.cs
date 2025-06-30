@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace PolicyPlus.Domain.Builders.Exceptions;
+namespace PolicyPlus.Domain.Utility.Builders.Exceptions;
 
 /// <summary>
 ///     Exception thrown when attempting to modify a builder after it has been built.

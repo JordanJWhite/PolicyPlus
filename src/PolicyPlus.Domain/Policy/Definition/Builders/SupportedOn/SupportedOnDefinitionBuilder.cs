@@ -1,6 +1,6 @@
-﻿using PolicyPlus.Domain.Builders.Base;
-using PolicyPlus.Domain.Builders.Helpers;
-using PolicyPlus.Domain.Policy.Definition.Model.SupportedOn;
+﻿using PolicyPlus.Domain.Policy.Definition.Model.SupportedOn;
+using PolicyPlus.Domain.Utility.Builders.Base;
+using PolicyPlus.Domain.Utility.Builders.Helpers;
 
 namespace PolicyPlus.Domain.Policy.Definition.Builders.SupportedOn;
 

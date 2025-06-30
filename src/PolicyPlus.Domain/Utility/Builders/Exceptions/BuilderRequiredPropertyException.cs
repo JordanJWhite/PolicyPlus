@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace PolicyPlus.Domain.Builders.Exceptions;
+namespace PolicyPlus.Domain.Utility.Builders.Exceptions;
 
 /// <summary>
 ///     Exception thrown when a required property is not set in a builder.

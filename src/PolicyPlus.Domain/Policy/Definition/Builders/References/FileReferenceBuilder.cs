@@ -1,5 +1,4 @@
 using PolicyPlus.Domain.Builders.Base;
-using PolicyPlus.Domain.Builders.Helpers;
 using PolicyPlus.Domain.Policy.Definition.Model.References;
 
 namespace PolicyPlus.Domain.Policy.Definition.Builders.References;

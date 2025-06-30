@@ -1,4 +1,4 @@
-﻿namespace PolicyPlus.Domain.Builders.Base;
+﻿namespace PolicyPlus.Domain.Utility.Builders.Base;
 
 /// <summary>
 ///     Base interface for all builders.

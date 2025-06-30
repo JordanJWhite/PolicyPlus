@@ -1,5 +1,4 @@
 ﻿using PolicyPlus.Domain.Builders.Base;
-using PolicyPlus.Domain.Builders.Helpers;
 using PolicyPlus.Domain.Policy.Definition.Model.Elements;
 using PolicyPlus.Domain.Policy.Definition.Model.Values;
 
